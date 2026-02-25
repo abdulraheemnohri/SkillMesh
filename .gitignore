@@ -1,0 +1,5 @@
+node_modules/
+professional-node/node_modules/
+node.log
+test-broadcast.log
+verification/

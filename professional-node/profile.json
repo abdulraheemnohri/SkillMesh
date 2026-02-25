@@ -1,0 +1,12 @@
+{
+  "id": "node-001",
+  "name": "Ali Khan",
+  "profession": "Electrician",
+  "skills": ["Inverter Repair", "Wiring", "LED Installation"],
+  "country": "Pakistan",
+  "city": "Karachi",
+  "location": "Clifton",
+  "profileImage": "ali.jpg",
+  "rating": 4.8,
+  "completedTasks": 12
+}

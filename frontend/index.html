@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkillMesh - Professional P2P Task Network</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>SkillMesh</h1>
+        <div id="professional-info">
+            <img id="profile-img" style="display:none;" alt="Profile">
+            <span id="node-name">Loading...</span>
+            <span id="node-profession"></span>
+            <span id="node-rating"></span>
+            <div id="node-skills" class="skills-list"></div>
+        </div>
+    </header>
+    <main>
+        <section id="post-task">
+            <h2>Post a Task</h2>
+            <form id="task-form">
+                <input type="text" id="title" placeholder="Task Title" required>
+                <textarea id="description" placeholder="Task Description" required></textarea>
+                <select id="type" required>
+                    <option value="">Select Task Type</option>
+                    <option value="Electrician">Electrician</option>
+                    <option value="Plumber">Plumber</option>
+                    <option value="Tutor">Tutor</option>
+                    <option value="Cleaner">Cleaner</option>
+                </select>
+                <input type="text" id="country" placeholder="Country" required>
+                <input type="text" id="city" placeholder="City" required>
+                <input type="text" id="location" placeholder="Location" required>
+                <button type="submit">Post Task</button>
+            </form>
+        </section>
+        <section id="task-filters">
+            <h2>Filters</h2>
+            <div class="filter-group">
+                <input type="text" id="filter-country" placeholder="Filter by Country">
+                <input type="text" id="filter-city" placeholder="Filter by City">
+                <input type="text" id="filter-location" placeholder="Filter by Location">
+                <select id="filter-type">
+                    <option value="">All Types</option>
+                    <option value="Electrician">Electrician</option>
+                    <option value="Plumber">Plumber</option>
+                    <option value="Tutor">Tutor</option>
+                    <option value="Cleaner">Cleaner</option>
+                </select>
+                <button onclick="loadTasks()">Apply Filters</button>
+            </div>
+        </section>
+
+        <section id="task-board">
+            <h2>Task Board</h2>
+            <div id="task-list"></div>
+        </section>
+        <section id="donations">
+            <h2>Support SkillMesh</h2>
+            <button onclick="donateCrypto(0.01)">Donate Crypto (MetaMask)</button>
+            <button onclick="donateBank()">Donate via Bank</button>
+            <div id="bank-info" style="display:none;">
+                <p>Bank: SkillMesh Bank</p>
+                <p>Account: 1234-5678-9012</p>
+            </div>
+        </section>
+    </main>
+    <script src="app.js"></script>
+</body>
+</html>
