@@ -76,6 +76,13 @@
                 </section>
 
                 <section class="card section-spacing">
+                    <h2>Online Professionals</h2>
+                    <div id="online-peers" class="peer-list">
+                        <p class="text-xs text-muted">Searching for peers...</p>
+                    </div>
+                </section>
+
+                <section class="card section-spacing">
                     <h2>Mesh Activity</h2>
                     <div id="activity-feed" class="activity-feed">
                         <p class="text-xs text-muted">Listening for mesh events...</p>
@@ -136,6 +143,10 @@
                                 <option value="Plumber">Plumber</option>
                                 <option value="Tutor">Tutor</option>
                                 <option value="Cleaner">Cleaner</option>
+                            </select>
+                            <select id="filter-scope">
+                                <option value="all">All Tasks</option>
+                                <option value="mine">My Claims</option>
                             </select>
                         </div>
                         <button onclick="loadTasks()" class="btn btn-secondary">Filter Board</button>

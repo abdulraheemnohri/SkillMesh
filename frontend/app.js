@@ -1,3 +1,5 @@
+let currentProfile = null;
+
 document.addEventListener('DOMContentLoaded', () => {
     loadProfile();
     loadTasks();
@@ -38,6 +40,7 @@ async function loadProfile() {
     try {
         const response = await fetch('/api/profile');
         const profile = await response.json();
+        currentProfile = profile;
         document.getElementById('node-name').textContent = profile.name;
         document.getElementById('node-profession').textContent = profile.profession;
         document.getElementById('node-rating').textContent = `★ ${profile.rating}`;
@@ -53,11 +56,13 @@ async function loadProfile() {
         else if (points >= 20) level = "Intermediate";
         document.getElementById('stat-level').textContent = level;
 
+        const img = document.getElementById('profile-img');
         if (profile.profileImage) {
-            const img = document.getElementById('profile-img');
             img.src = '/images/' + profile.profileImage;
-            img.style.display = 'block';
+        } else {
+            img.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.name)}&background=6366f1&color=fff`;
         }
+        img.style.display = 'block';
 
         if (profile.skills && profile.skills.length > 0) {
             const skillsDiv = document.getElementById('node-skills');
@@ -84,12 +89,17 @@ async function loadTasks() {
         const filterCity = document.getElementById('filter-city').value.toLowerCase();
         const filterLoc = document.getElementById('filter-location').value.toLowerCase();
         const filterType = document.getElementById('filter-type').value;
+        const filterScope = document.getElementById('filter-scope').value;
 
         tasks = tasks.filter(t => {
-            return (!filterCountry || (t.country && t.country.toLowerCase().includes(filterCountry))) &&
+            const matchesLoc = (!filterCountry || (t.country && t.country.toLowerCase().includes(filterCountry))) &&
                    (!filterCity || (t.city && t.city.toLowerCase().includes(filterCity))) &&
                    (!filterLoc || (t.location && t.location.toLowerCase().includes(filterLoc))) &&
                    (!filterType || t.type === filterType);
+
+            const matchesScope = filterScope === 'all' || (currentProfile && t.assignedTo === currentProfile.id);
+
+            return matchesLoc && matchesScope;
         });
 
         // Sort by timestamp descending
@@ -115,11 +125,12 @@ async function loadTasks() {
             const safeDeadline = task.deadline ? escapeHTML(task.deadline) : null;
 
             const statusClass = `status-${task.status}`;
+            const assignedText = task.assignedToName ? ` (to ${escapeHTML(task.assignedToName)})` : '';
 
             taskCard.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                     <h3>${safeTitle}</h3>
-                    <span class="task-status-badge ${statusClass}">${safeStatus.toUpperCase()}</span>
+                    <span class="task-status-badge ${statusClass}">${safeStatus.toUpperCase()}${task.status === 'assigned' ? assignedText : ''}</span>
                 </div>
                 <p>${safeDesc}</p>
                 <div class="task-meta">
@@ -229,9 +240,29 @@ function startMeshStatsPolling() {
         try {
             const response = await fetch('/api/mesh/stats');
             const stats = await response.json();
+
+            // Update Mesh Status
             const indicator = document.getElementById('sync-status');
             indicator.innerHTML = `<span class="dot ${stats.peerCount > 0 ? 'pulse' : ''}"></span> ${stats.peerCount > 0 ? 'Mesh Active' : 'Searching Mesh'} (${stats.peerCount} Peers)`;
+
+            // Update Online Professionals
+            const peerList = document.getElementById('online-peers');
+            if (stats.activeProfessionals && stats.activeProfessionals.length > 0) {
+                peerList.innerHTML = stats.activeProfessionals.map(p => `
+                    <div class="peer-item">
+                        <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=94a3b8&color=fff" class="peer-avatar">
+                        <div class="peer-info">
+                            <strong>${escapeHTML(p.name)}</strong>
+                            <span>${escapeHTML(p.profession)} • ★ ${p.rating} (${p.completedTasks || 0} done)</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                peerList.innerHTML = '<p class="text-xs text-muted">No other professionals online.</p>';
+            }
         } catch (e) {
+            const indicator = document.getElementById('sync-status');
+            indicator.innerHTML = `<span class="dot" style="background-color: var(--danger);"></span> Disconnected from Node`;
             console.error('Mesh stats error:', e);
         }
     }, 5000);

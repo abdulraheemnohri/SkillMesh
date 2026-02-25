@@ -293,6 +293,45 @@ textarea {
     border-left: 3px solid var(--primary);
 }
 
+.peer-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.peer-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    background: #f8fafc;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+}
+
+.peer-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+}
+
+.peer-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.peer-info strong {
+    font-size: 0.75rem;
+    color: var(--text);
+}
+
+.peer-info span {
+    font-size: 0.625rem;
+    color: var(--text-muted);
+}
+
 .text-xs { font-size: 0.75rem; }
 
 .bank-details {
