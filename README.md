@@ -1,125 +1,98 @@
 # SkillMesh – Professional P2P Task Network
 
-SkillMesh is a fully decentralized professional task network that connects users posting tasks with local professionals (Electricians, Plumbers, Tutors, etc.) using a P2P mesh network. It is lightweight, offline-first, and cross-platform (Termux, Desktop, Browser).
+SkillMesh is a fully decentralized professional task network that connects users posting tasks with local professionals (Electricians, Plumbers, Tutors, etc.) using a P2P mesh network.
+
+The ecosystem consists of two variants:
+1.  **Professional Node (Pro Dashboard):** For service providers (electricians, plumbers, etc.) to host the mesh and manage tasks.
+2.  **User Client (HTML App):** A lightweight standalone app for normal users to post tasks and track status.
 
 ---
 
 ## 🚀 Features
 
-- **Modern & Responsive UI:** Card-based design for tasks with status badges and filtering.
-- **Decentralized Task Posting:** Users broadcast tasks to the mesh with location metadata.
-- **Professional Dashboard:** Real-time task board with category and location filtering.
-- **P2P Mesh Sync:** Built on `libp2p`, ensuring tasks and claims sync automatically across peers.
-- **Profile Management:** Displays professional skills, ratings, and profile images.
-- **Integrated Donations:** Support for MetaMask (Crypto) and Bank transfer details.
-- **Offline-First:** Works locally and syncs as soon as the mesh network is reachable.
+- **Decentralized Architecture:** No central server; tasks sync directly between professional nodes.
+- **Dual-App Ecosystem:** Optimized UI for both professionals (full dashboard) and users (simplified posting).
+- **Mesh Heartbeat & Discovery:** See online professionals and network status in real-time.
+- **P2P Sync & Conflict Resolution:** Built on `libp2p` with "First-Claim-Wins" logic.
+- **Multi-Location Filtering:** Filter tasks by Country, City, and Specific Area.
+- **Reputation System:** Professionals earn points and level up (Beginner to Expert).
+- **Donation Ready:** Integrated Crypto (MetaMask) and Bank payment options.
 
 ---
 
-## 🧠 How it Works
-
-1.  **Node Discovery:** When a SkillMesh node starts, it uses **mDNS** to find other nodes on the local network. It can also be configured with bootstrap nodes for wider discovery.
-2.  **Task Broadcasting:** When a user posts a task, it is published to the `skillmesh-tasks` **GossipSub** topic. All connected peers receive this task and store it in their local `tasks.json`.
-3.  **Claiming Logic:** When a professional claims a task, a `task-claim` message is broadcasted.
-4.  **Conflict Resolution:** SkillMesh uses a **"First-Claim-Wins"** strategy. The first claim received for an unassigned task is accepted and persisted across the mesh. Subsequent claims for the same task are ignored by other nodes.
-5.  **Data Persistence:** Every node maintains its own copy of the mesh state in local JSON files, ensuring full functionality even when disconnected.
-
----
-
-## 📂 Folder Structure
+## 📂 Project Structure
 
 ```text
 SkillMesh/
-├── frontend/             # Browser UI (Modern HTML/CSS/JS)
-├── professional-node/    # Node.js P2P Service
-│   ├── node.js           # Express API + P2P PubSub logic
-│   ├── libp2p-network.js # libp2p Stack Configuration
-│   ├── profile.json      # Your Professional Profile
-│   ├── tasks.json        # Synced Mesh Tasks
-│   └── package.json      # Backend Dependencies
-├── images/               # Media & Profile Pictures
+├── professional-node/    # The Mesh Core (Backend + Pro UI)
+│   ├── node.js           # P2P Node & Gateway API
+│   ├── profile.json      # Professional Identity
+│   ├── tasks.json        # Synced Mesh Database
+│   └── frontend/         # Professional Dashboard UI
+├── client-app/           # Standalone User Client (HTML App)
+│   ├── index.html        # Task Posting UI
+│   └── app.js            # Node Connection Logic
+├── images/               # Shared Media Assets
 └── README.md             # This Documentation
 ```
 
 ---
 
-## 🛠️ Installation Guide
+## 🛠️ Installation & Setup
 
-### 💻 Desktop (Windows / macOS / Linux)
+### 1. The Professional Node (Gateway)
+Professionals install this to participate in the mesh and provide a gateway for users.
 
-1.  **Prerequisites:** Install [Node.js](https://nodejs.org/) (v18 or higher).
-2.  **Clone Repository:**
-    ```bash
-    git clone https://github.com/abdulraheemnohri/SkillMesh.git
-    cd SkillMesh
-    ```
-3.  **Install Dependencies:**
-    ```bash
-    cd professional-node
-    npm install
-    ```
-4.  **Launch:**
-    ```bash
-    node node.js
-    ```
+**Desktop / Laptop:**
+1.  Install [Node.js](https://nodejs.org/) (v18+).
+2.  Navigate to `professional-node/` and run `npm install`.
+3.  Start the node: `node node.js`.
+4.  Access dashboard: `http://localhost:3000`.
 
-### 📱 Android (via Termux)
-
-1.  **Environment Setup:**
-    ```bash
-    pkg update && pkg upgrade
-    pkg install nodejs git
-    ```
-2.  **Clone & Install:**
-    ```bash
-    git clone https://github.com/abdulraheemnohri/SkillMesh.git
-    cd SkillMesh/professional-node
-    npm install
-    ```
-3.  **Run:**
-    ```bash
-    node node.js
-    ```
+**Android (via Termux):**
+1.  `pkg update && pkg install nodejs git`.
+2.  `cd professional-node && npm install`.
+3.  `node node.js`.
 
 ---
 
-## ⚙️ Setup & Configuration
+### 2. The User Client (Mobile / Standalone)
+Normal users open this to post tasks. It can be hosted on a static server or used as a local HTML app.
 
-### 1. Configure Your Professional Profile
-Edit `professional-node/profile.json` to showcase your skills:
-```json
-{
-  "id": "node-unique-id",
-  "name": "Ali Khan",
-  "profession": "Electrician",
-  "skills": ["Inverter Repair", "House Wiring", "Solar Setup"],
-  "profileImage": "ali.jpg",
-  "rating": 4.9
-}
-```
-*Note: Place your profile image in the `/images` folder.*
-
-### 2. Set Your Donation Address
-To receive crypto tips, update `frontend/app.js`:
-- Search for `YOUR_CRYPTO_WALLET_ADDRESS` and replace it with your actual Ethereum/EVM wallet address.
-
-### 3. Customize Task Categories
-You can add or remove professions by editing the `<select>` elements in `frontend/index.html` (search for `id="type"` and `id="filter-type"`).
+1.  Open `client-app/index.html` in any browser.
+2.  Click the ⚙️ (Settings) icon.
+3.  Set the **Mesh Node URL** to the IP/URL of a running Professional Node (default: `http://localhost:3000`).
+4.  Start posting tasks!
 
 ---
 
-## 🌐 Usage Guide
+## 🧠 Core Concepts
 
-1.  **Starting Up:** Once the node is running, open `http://localhost:3000` in your browser.
-2.  **Posting a Task:** Fill the "Post a Task" form. Once submitted, your task will be visible on your board and broadcasted to all peers.
-3.  **Filtering:** Use the filter bar to narrow down tasks by Country, City, or Profession.
-4.  **Claiming:** Click "Claim Task" on any open task. The status will update to **ASSIGNED** across the network.
-5.  **Completion:** Once the job is done, mark it as **COMPLETED** to update your reputation and notify the mesh.
+### Mesh Connectivity
+Professional nodes form a mesh using **mDNS** (local) and **PubSub**. They act as "gateways" for user clients. When a user posts a task to a node, that node broadcasts it to all other peers in the mesh.
+
+### Conflict Resolution
+If two professionals claim the same task at the same time, SkillMesh uses **Timestamp-based Priority**. The claim with the earlier `assignedAt` timestamp is accepted by the network, ensuring a single professional is assigned.
+
+### Reputation & Stats
+Professionals earn **10 points** per completed task.
+- **0-19 pts:** Beginner
+- **20-49 pts:** Intermediate
+- **50-99 pts:** Pro
+- **100+ pts:** Expert
+
+---
+
+## ⚙️ Configuration
+
+- **Profile:** Edit `professional-node/profile.json` to set your name, profession, and skills.
+- **Donations:** Replace `YOUR_CRYPTO_WALLET_ADDRESS` in both `professional-node/node.js` (or `app.js`) and `client-app/app.js` with your EVM address.
+- **CORS:** The Pro Node has built-in CORS support to allow any User Client to connect securely.
 
 ---
 
 ## 🤝 Contributing
-SkillMesh is decentralized and open-source. Feel free to fork and submit PRs to improve the mesh!
+SkillMesh is decentralized and open-source. Feel free to fork and improve the mesh!
 
 ---
 

@@ -14,6 +14,7 @@ let tasks = JSON.parse(fs.readFileSync(tasksPath, 'utf8'))
 let profile = JSON.parse(fs.readFileSync(profilePath, 'utf8'))
 
 const app = express()
+app.use(express.static(path.join(path.dirname(fileURLToPath(import.meta.url)), 'frontend')))
 app.use(express.json())
 // Simple CORS middleware
 app.use((req, res, next) => {
@@ -24,9 +25,6 @@ app.use((req, res, next) => {
   if (req.method === 'OPTIONS') return res.sendStatus(200);
   next();
 });
-app.use(express.static(path.join(__dirname, '../frontend')))
-app.use('/images', express.static(path.join(__dirname, '../images')))
-
 const p2pNode = await createNode()
 await p2pNode.start()
 console.log('P2P Node started, id:', p2pNode.peerId.toString())
@@ -182,4 +180,5 @@ async function broadcast(data, topic) {
     // Silent fail if no peers
   }
 }
+app.use('/images', express.static(path.join(__dirname, '../images')))
 app.listen(3000, () => console.log('SkillMesh running at http://localhost:3000'))
