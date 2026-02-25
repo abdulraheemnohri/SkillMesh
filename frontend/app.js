@@ -21,39 +21,38 @@ document.addEventListener('DOMContentLoaded', () => {
             body: JSON.stringify(taskData)
         });
         if (response.ok) {
-            alert('Task posted successfully!');
+            showToast('Task broadcasted to mesh!');
             taskForm.reset();
             loadTasks();
+        } else {
+            showToast('Failed to broadcast task.', 'danger');
         }
     });
 });
+
 async function loadProfile() {
     try {
         const response = await fetch('/api/profile');
         const profile = await response.json();
         document.getElementById('node-name').textContent = profile.name;
-        document.getElementById('node-profession').textContent = ' | ' + profile.profession;
-        document.getElementById('node-rating').textContent = ' | Rating: ' + profile.rating;
+        document.getElementById('node-profession').textContent = profile.profession;
+        document.getElementById('node-rating').textContent = `★ ${profile.rating}`;
 
         if (profile.profileImage) {
             const img = document.getElementById('profile-img');
             img.src = '/images/' + profile.profileImage;
-            img.style.display = 'inline-block';
-            img.style.width = '50px';
-            img.style.height = '50px';
-            img.style.borderRadius = '50%';
-            img.style.verticalAlign = 'middle';
-            img.style.marginRight = '10px';
+            img.style.display = 'block';
         }
 
         if (profile.skills && profile.skills.length > 0) {
             const skillsDiv = document.getElementById('node-skills');
-            skillsDiv.innerHTML = 'Skills: ' + profile.skills.map(s => `<span>${escapeHTML(s)}</span>`).join('');
+            skillsDiv.innerHTML = profile.skills.map(s => `<span>${escapeHTML(s)}</span>`).join('');
         }
     } catch (e) {
         console.error('Error loading profile:', e);
     }
 }
+
 function escapeHTML(str) {
     if (!str) return '';
     const div = document.createElement('div');
@@ -78,8 +77,17 @@ async function loadTasks() {
                    (!filterType || t.type === filterType);
         });
 
+        // Sort by timestamp descending
+        tasks.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
         const taskList = document.getElementById('task-list');
         taskList.innerHTML = '';
+
+        if (tasks.length === 0) {
+            taskList.innerHTML = '<p class="text-muted" style="text-align:center; padding: 2rem;">No tasks found on the mesh matching your criteria.</p>';
+            return;
+        }
+
         tasks.forEach(task => {
             const taskCard = document.createElement('div');
             taskCard.className = 'task-card';
@@ -90,26 +98,60 @@ async function loadTasks() {
             const safeLoc = escapeHTML(task.location);
             const safeStatus = escapeHTML(task.status);
 
-            taskCard.innerHTML = `<h3>${safeTitle}</h3><p>${safeDesc}</p>` +
-                `<p>Type: ${safeType} | Location: ${safeLoc}</p>` +
-                `<p class="task-status">Status: ${safeStatus}</p>` +
-                (task.status === 'open' ? `<button class="claim-btn" onclick="claimTask('${task.id}')">Claim Task</button>` : '') +
-                (task.status === 'assigned' ? `<button class="complete-btn" onclick="completeTask('${task.id}')">Mark Completed</button>` : '');
+            const statusClass = `status-${task.status}`;
+
+            taskCard.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <h3>${safeTitle}</h3>
+                    <span class="task-status-badge ${statusClass}">${safeStatus.toUpperCase()}</span>
+                </div>
+                <p>${safeDesc}</p>
+                <div class="task-meta">
+                    <span class="meta-item">📁 ${safeType}</span>
+                    <span class="meta-item">📍 ${safeLoc}</span>
+                    <span class="meta-item">🕒 ${new Date(task.timestamp).toLocaleDateString()}</span>
+                </div>
+                <div class="task-actions">
+                    ${task.status === 'open' ? `<button class="btn btn-primary btn-sm" onclick="claimTask('${task.id}')">Claim Task</button>` : ''}
+                    ${task.status === 'assigned' ? `<button class="btn btn-secondary btn-sm" onclick="completeTask('${task.id}')">Mark Completed</button>` : ''}
+                </div>
+            `;
             taskList.appendChild(taskCard);
         });
     } catch (e) {
         console.error('Error loading tasks:', e);
     }
 }
+
 window.claimTask = async function(taskId) {
-    await fetch('/api/tasks/claim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ taskId }) });
-    loadTasks();
+    const response = await fetch('/api/tasks/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId })
+    });
+    if (response.ok) {
+        showToast('Task claimed successfully!');
+        loadTasks();
+    } else {
+        showToast('Task already claimed or not found.', 'danger');
+    }
 }
+
 window.completeTask = async function(taskId) {
-    await fetch('/api/tasks/complete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ taskId }) });
-    loadTasks();
-    loadProfile();
+    const response = await fetch('/api/tasks/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId })
+    });
+    if (response.ok) {
+        showToast('Task marked as completed!');
+        loadTasks();
+        loadProfile();
+    } else {
+        showToast('Failed to complete task.', 'danger');
+    }
 }
+
 window.donateCrypto = async function(amountEth) {
     if (typeof window.ethereum !== "undefined") {
         try {
@@ -118,17 +160,33 @@ window.donateCrypto = async function(amountEth) {
                 method: "eth_sendTransaction",
                 params: [{
                     from: account,
-                    to: "YOUR_CRYPTO_WALLET_ADDRESS", // Replace with actual address
+                    to: "YOUR_CRYPTO_WALLET_ADDRESS",
                     value: "0x" + (amountEth * 1e18).toString(16)
                 }],
             });
-            alert("Thank you for donating in crypto!");
+            showToast("Thank you for your crypto donation!");
         } catch (error) {
-            console.error(error);
-            alert("Donation failed or was cancelled.");
+            showToast("Donation cancelled.", "warning");
         }
     } else {
-        alert("MetaMask not detected!");
+        showToast("MetaMask not detected!", "danger");
     }
 }
-window.donateBank = function() { document.getElementById('bank-info').style.display = 'block'; }
+
+window.donateBank = function() {
+    document.getElementById('bank-info').style.display = 'block';
+    showToast('Bank details displayed.');
+}
+
+function showToast(message, type = 'success') {
+    const toast = document.getElementById('notification-toast');
+    toast.textContent = message;
+    toast.className = 'toast show';
+    if (type === 'danger') toast.style.background = '#ef4444';
+    else if (type === 'warning') toast.style.background = '#f59e0b';
+    else toast.style.background = '#1e293b';
+
+    setTimeout(() => {
+        toast.className = 'toast';
+    }, 3000);
+}
