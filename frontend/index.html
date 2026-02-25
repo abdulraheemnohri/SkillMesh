@@ -3,70 +3,207 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SkillMesh - Professional P2P Task Network</title>
+    <title>SkillMesh – Decentralized Professional Mesh</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <header>
-        <h1>SkillMesh</h1>
-        <div id="professional-info">
-            <img id="profile-img" style="display:none;" alt="Profile">
-            <span id="node-name">Loading...</span>
-            <span id="node-profession"></span>
-            <span id="node-rating"></span>
-            <div id="node-skills" class="skills-list"></div>
+    <header class="navbar">
+        <div class="container">
+            <h1 class="logo">SkillMesh</h1>
+            <div class="nav-right">
+                <button onclick="openSettings()" class="btn-icon" title="Profile Settings">⚙️</button>
+                <div id="professional-info" class="user-profile">
+                    <img id="profile-img" style="display:none;" alt="Profile">
+                    <div class="profile-details">
+                        <div class="name-row">
+                            <span id="node-name">Loading...</span>
+                            <span id="node-rating" class="badge-rating"></span>
+                        </div>
+                        <span id="node-profession" class="text-muted"></span>
+                        <div id="node-skills" class="skills-list"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </header>
-    <main>
-        <section id="post-task">
-            <h2>Post a Task</h2>
-            <form id="task-form">
-                <input type="text" id="title" placeholder="Task Title" required>
-                <textarea id="description" placeholder="Task Description" required></textarea>
-                <select id="type" required>
-                    <option value="">Select Task Type</option>
-                    <option value="Electrician">Electrician</option>
-                    <option value="Plumber">Plumber</option>
-                    <option value="Tutor">Tutor</option>
-                    <option value="Cleaner">Cleaner</option>
-                </select>
-                <input type="text" id="country" placeholder="Country" required>
-                <input type="text" id="city" placeholder="City" required>
-                <input type="text" id="location" placeholder="Location" required>
-                <button type="submit">Post Task</button>
-            </form>
-        </section>
-        <section id="task-filters">
-            <h2>Filters</h2>
-            <div class="filter-group">
-                <input type="text" id="filter-country" placeholder="Filter by Country">
-                <input type="text" id="filter-city" placeholder="Filter by City">
-                <input type="text" id="filter-location" placeholder="Filter by Location">
-                <select id="filter-type">
-                    <option value="">All Types</option>
-                    <option value="Electrician">Electrician</option>
-                    <option value="Plumber">Plumber</option>
-                    <option value="Tutor">Tutor</option>
-                    <option value="Cleaner">Cleaner</option>
-                </select>
-                <button onclick="loadTasks()">Apply Filters</button>
-            </div>
-        </section>
 
-        <section id="task-board">
-            <h2>Task Board</h2>
-            <div id="task-list"></div>
-        </section>
-        <section id="donations">
-            <h2>Support SkillMesh</h2>
-            <button onclick="donateCrypto(0.01)">Donate Crypto (MetaMask)</button>
-            <button onclick="donateBank()">Donate via Bank</button>
-            <div id="bank-info" style="display:none;">
-                <p>Bank: SkillMesh Bank</p>
-                <p>Account: 1234-5678-9012</p>
+    <main class="container">
+        <div class="grid">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <section class="card section-spacing">
+                    <h2>Post a Task</h2>
+                    <p class="section-desc">Need professional help? Broadcast your task to the mesh.</p>
+                    <form id="task-form" class="form-stack">
+                        <div class="field">
+                            <label for="title">Task Title</label>
+                            <input type="text" id="title" placeholder="Fix Inverter Wiring" required>
+                        </div>
+                        <div class="field">
+                            <label for="description">Description</label>
+                            <textarea id="description" placeholder="Urgent repair required for..." required></textarea>
+                        </div>
+                        <div class="field">
+                            <label for="type">Task Type</label>
+                            <select id="type" required>
+                                <option value="">Select Category</option>
+                                <option value="Electrician">Electrician</option>
+                                <option value="Plumber">Plumber</option>
+                                <option value="Tutor">Tutor</option>
+                                <option value="Cleaner">Cleaner</option>
+                            </select>
+                        </div>
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="country">Country</label>
+                                <input type="text" id="country" placeholder="Pakistan" required>
+                            </div>
+                            <div class="field">
+                                <label for="city">City</label>
+                                <input type="text" id="city" placeholder="Karachi" required>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label for="location">Specific Location</label>
+                            <input type="text" id="location" placeholder="Clifton Block 5" required>
+                        </div>
+                        <div class="field">
+                            <label for="deadline">Deadline (Optional)</label>
+                            <input type="date" id="deadline">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Broadcast Task</button>
+                    </form>
+                </section>
+
+                <section class="card section-spacing">
+                    <h2>Online Professionals</h2>
+                    <div id="online-peers" class="peer-list">
+                        <p class="text-xs text-muted">Searching for peers...</p>
+                    </div>
+                </section>
+
+                <section class="card section-spacing">
+                    <h2>Mesh Activity</h2>
+                    <div id="activity-feed" class="activity-feed">
+                        <p class="text-xs text-muted">Listening for mesh events...</p>
+                    </div>
+                </section>
+
+                <section class="card section-spacing">
+                    <h2>Professional Stats</h2>
+                    <div class="stats-container">
+                        <div class="stat-box">
+                            <span class="stat-label">Total Points</span>
+                            <span id="stat-points" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Completed</span>
+                            <span id="stat-completed" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Level</span>
+                            <span id="stat-level" class="stat-value">Beginner</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <h2>Support Development</h2>
+                    <p class="section-desc">SkillMesh is open-source. Help us keep it decentralized.</p>
+                    <div class="btn-group">
+                        <button class="btn btn-outline" onclick="donateCrypto(0.01)">Crypto Tip</button>
+                        <button class="btn btn-outline" onclick="donateBank()">Bank Details</button>
+                    </div>
+                    <div id="bank-info" class="bank-details" style="display:none;">
+                        <p><strong>Bank:</strong> SkillMesh P2P Bank</p>
+                        <p><strong>Account:</strong> 1234-5678-9012-3456</p>
+                        <p class="text-xs">Your support helps keep the mesh alive!</p>
+                    </div>
+                </section>
+            </aside>
+
+            <!-- Main Content -->
+            <div class="main-content">
+                <section class="card section-spacing">
+                    <div class="board-header">
+                        <h2>Mesh Task Board</h2>
+                        <div id="sync-status" class="sync-indicator">
+                            <span class="dot pulse"></span> Connected to Mesh
+                        </div>
+                    </div>
+
+                    <div class="filter-bar">
+                        <div class="filter-input-group">
+                            <input type="text" id="filter-country" placeholder="Country">
+                            <input type="text" id="filter-city" placeholder="City">
+                            <input type="text" id="filter-location" placeholder="Area">
+                            <select id="filter-type">
+                                <option value="">All Categories</option>
+                                <option value="Electrician">Electrician</option>
+                                <option value="Plumber">Plumber</option>
+                                <option value="Tutor">Tutor</option>
+                                <option value="Cleaner">Cleaner</option>
+                            </select>
+                            <select id="filter-scope">
+                                <option value="all">All Tasks</option>
+                                <option value="mine">My Claims</option>
+                            </select>
+                        </div>
+                        <button onclick="loadTasks()" class="btn btn-secondary">Filter Board</button>
+                    </div>
+
+                    <div id="task-list" class="task-grid">
+                        <!-- Tasks dynamically loaded here -->
+                    </div>
+                </section>
             </div>
-        </section>
+        </div>
     </main>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Profile Settings</h2>
+                <button class="close-btn" onclick="closeSettings()">&times;</button>
+            </div>
+            <form id="settings-form" class="form-stack">
+                <div class="field">
+                    <label for="set-name">Full Name</label>
+                    <input type="text" id="set-name" required>
+                </div>
+                <div class="field">
+                    <label for="set-profession">Profession</label>
+                    <input type="text" id="set-profession" required>
+                </div>
+                <div class="field">
+                    <label for="set-skills">Skills (comma separated)</label>
+                    <input type="text" id="set-skills">
+                </div>
+                <div class="field-row">
+                    <div class="field">
+                        <label for="set-country">Country</label>
+                        <input type="text" id="set-country" required>
+                    </div>
+                    <div class="field">
+                        <label for="set-city">City</label>
+                        <input type="text" id="set-city" required>
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="set-location">Default Location</label>
+                    <input type="text" id="set-location" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="notification-toast" class="toast"></div>
+
     <script src="app.js"></script>
 </body>
 </html>
