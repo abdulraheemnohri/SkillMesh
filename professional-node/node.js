@@ -16,6 +16,7 @@ let profile = JSON.parse(fs.readFileSync(profilePath, 'utf8'))
 const app = express()
 app.use(express.json())
 app.use(express.static(path.join(__dirname, '../frontend')))
+app.use('/images', express.static(path.join(__dirname, '../images')))
 
 const p2pNode = await createNode()
 await p2pNode.start()

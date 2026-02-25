@@ -119,7 +119,7 @@ window.donateCrypto = async function(amountEth) {
                 params: [{
                     from: account,
                     to: "YOUR_CRYPTO_WALLET_ADDRESS", // Replace with actual address
-                    value: (amountEth * 1e18).toString(16)
+                    value: "0x" + (amountEth * 1e18).toString(16)
                 }],
             });
             alert("Thank you for donating in crypto!");
