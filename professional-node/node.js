@@ -51,6 +51,11 @@ function handleP2PMessage(message) {
 
 app.get('/api/profile', (req, res) => res.json(profile))
 app.get('/api/tasks', (req, res) => res.json(tasks))
+app.get('/api/mesh/stats', (req, res) => {
+  res.json({
+    peerCount: p2pNode.getPeers().length
+  })
+})
 app.post('/api/tasks', (req, res) => {
   tasks.push(req.body); fs.writeFileSync(tasksPath, JSON.stringify(tasks, null, 2))
   broadcast({ type: 'task-broadcast', task: req.body })

@@ -67,8 +67,37 @@
                             <label for="location">Specific Location</label>
                             <input type="text" id="location" placeholder="Clifton Block 5" required>
                         </div>
+                        <div class="field">
+                            <label for="deadline">Deadline (Optional)</label>
+                            <input type="date" id="deadline">
+                        </div>
                         <button type="submit" class="btn btn-primary">Broadcast Task</button>
                     </form>
+                </section>
+
+                <section class="card section-spacing">
+                    <h2>Mesh Activity</h2>
+                    <div id="activity-feed" class="activity-feed">
+                        <p class="text-xs text-muted">Listening for mesh events...</p>
+                    </div>
+                </section>
+
+                <section class="card section-spacing">
+                    <h2>Professional Stats</h2>
+                    <div class="stats-container">
+                        <div class="stat-box">
+                            <span class="stat-label">Total Points</span>
+                            <span id="stat-points" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Completed</span>
+                            <span id="stat-completed" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Level</span>
+                            <span id="stat-level" class="stat-value">Beginner</span>
+                        </div>
+                    </div>
                 </section>
 
                 <section class="card">

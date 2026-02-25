@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     loadProfile();
     loadTasks();
+    startMeshStatsPolling();
+    startTaskPolling();
     const taskForm = document.getElementById('task-form');
     taskForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -11,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
             country: document.getElementById('country').value,
             city: document.getElementById('city').value,
             location: document.getElementById('location').value,
+            deadline: document.getElementById('deadline').value,
             timestamp: new Date().toISOString(),
             id: 'task-' + Date.now(),
             status: 'open'
@@ -22,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         if (response.ok) {
             showToast('Task broadcasted to mesh!');
+            addActivity('You broadcasted a new task');
             taskForm.reset();
             loadTasks();
         } else {
@@ -37,6 +41,17 @@ async function loadProfile() {
         document.getElementById('node-name').textContent = profile.name;
         document.getElementById('node-profession').textContent = profile.profession;
         document.getElementById('node-rating').textContent = `★ ${profile.rating}`;
+
+        // Reputation Logic
+        const points = profile.completedTasks * 10;
+        document.getElementById('stat-points').textContent = points;
+        document.getElementById('stat-completed').textContent = profile.completedTasks;
+
+        let level = "Beginner";
+        if (points >= 100) level = "Expert";
+        else if (points >= 50) level = "Pro";
+        else if (points >= 20) level = "Intermediate";
+        document.getElementById('stat-level').textContent = level;
 
         if (profile.profileImage) {
             const img = document.getElementById('profile-img');
@@ -97,6 +112,7 @@ async function loadTasks() {
             const safeType = escapeHTML(task.type);
             const safeLoc = escapeHTML(task.location);
             const safeStatus = escapeHTML(task.status);
+            const safeDeadline = task.deadline ? escapeHTML(task.deadline) : null;
 
             const statusClass = `status-${task.status}`;
 
@@ -110,6 +126,7 @@ async function loadTasks() {
                     <span class="meta-item">📁 ${safeType}</span>
                     <span class="meta-item">📍 ${safeLoc}</span>
                     <span class="meta-item">🕒 ${new Date(task.timestamp).toLocaleDateString()}</span>
+                    ${safeDeadline ? `<span class="meta-item" style="color: var(--danger);">📅 Due: ${safeDeadline}</span>` : ''}
                 </div>
                 <div class="task-actions">
                     ${task.status === 'open' ? `<button class="btn btn-primary btn-sm" onclick="claimTask('${task.id}')">Claim Task</button>` : ''}
@@ -131,6 +148,7 @@ window.claimTask = async function(taskId) {
     });
     if (response.ok) {
         showToast('Task claimed successfully!');
+        addActivity('You claimed a task');
         loadTasks();
     } else {
         showToast('Task already claimed or not found.', 'danger');
@@ -145,6 +163,7 @@ window.completeTask = async function(taskId) {
     });
     if (response.ok) {
         showToast('Task marked as completed!');
+        addActivity('You completed a task');
         loadTasks();
         loadProfile();
     } else {
@@ -176,6 +195,46 @@ window.donateCrypto = async function(amountEth) {
 window.donateBank = function() {
     document.getElementById('bank-info').style.display = 'block';
     showToast('Bank details displayed.');
+}
+
+let lastTaskCount = 0;
+function startTaskPolling() {
+    setInterval(async () => {
+        try {
+            const response = await fetch('/api/tasks');
+            const tasks = await response.json();
+            if (tasks.length > lastTaskCount) {
+                if (lastTaskCount > 0) addActivity('New task broadcasted on mesh');
+                lastTaskCount = tasks.length;
+                loadTasks();
+            }
+        } catch (e) {}
+    }, 10000);
+}
+
+function addActivity(text) {
+    const feed = document.getElementById('activity-feed');
+    if (feed.querySelector('p.text-muted')) feed.innerHTML = '';
+
+    const item = document.createElement('div');
+    item.className = 'activity-item';
+    item.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${escapeHTML(text)}`;
+    feed.prepend(item);
+
+    if (feed.children.length > 5) feed.removeChild(feed.lastChild);
+}
+
+function startMeshStatsPolling() {
+    setInterval(async () => {
+        try {
+            const response = await fetch('/api/mesh/stats');
+            const stats = await response.json();
+            const indicator = document.getElementById('sync-status');
+            indicator.innerHTML = `<span class="dot ${stats.peerCount > 0 ? 'pulse' : ''}"></span> ${stats.peerCount > 0 ? 'Mesh Active' : 'Searching Mesh'} (${stats.peerCount} Peers)`;
+        } catch (e) {
+            console.error('Mesh stats error:', e);
+        }
+    }, 5000);
 }
 
 function showToast(message, type = 'success') {
