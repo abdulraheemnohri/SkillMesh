@@ -27,6 +27,14 @@
             <!-- Sidebar -->
             <aside class="sidebar">
                 <section class="card section-spacing">
+                    <h2>Available Professionals</h2>
+                    <p class="section-desc">Active professionals currently on the mesh.</p>
+                    <div id="online-peers" class="peer-list">
+                        <p class="text-xs text-muted">Searching the mesh...</p>
+                    </div>
+                </section>
+
+                <section class="card section-spacing">
                     <h2>Post a New Task</h2>
                     <p class="section-desc">Broadcast your need to the professional mesh network.</p>
                     <form id="task-form" class="form-stack">
@@ -82,8 +90,16 @@
             <!-- Main Content -->
             <div class="main-content">
                 <section class="card section-spacing">
-                    <div class="board-header">
+                    <div class="board-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
                         <h2>My Posted Tasks</h2>
+                        <div class="filter-group">
+                            <select id="filter-status" onchange="loadMyTasks()">
+                                <option value="all">All Status</option>
+                                <option value="open">Open</option>
+                                <option value="assigned">Assigned</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div id="task-list" class="task-grid">
