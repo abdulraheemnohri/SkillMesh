@@ -13,15 +13,18 @@
     <header class="navbar">
         <div class="container">
             <h1 class="logo">SkillMesh</h1>
-            <div id="professional-info" class="user-profile">
-                <img id="profile-img" style="display:none;" alt="Profile">
-                <div class="profile-details">
-                    <div class="name-row">
-                        <span id="node-name">Loading...</span>
-                        <span id="node-rating" class="badge-rating"></span>
+            <div class="nav-right">
+                <button onclick="openSettings()" class="btn-icon" title="Profile Settings">⚙️</button>
+                <div id="professional-info" class="user-profile">
+                    <img id="profile-img" style="display:none;" alt="Profile">
+                    <div class="profile-details">
+                        <div class="name-row">
+                            <span id="node-name">Loading...</span>
+                            <span id="node-rating" class="badge-rating"></span>
+                        </div>
+                        <span id="node-profession" class="text-muted"></span>
+                        <div id="node-skills" class="skills-list"></div>
                     </div>
-                    <span id="node-profession" class="text-muted"></span>
-                    <div id="node-skills" class="skills-list"></div>
                 </div>
             </div>
         </div>
@@ -159,6 +162,45 @@
             </div>
         </div>
     </main>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Profile Settings</h2>
+                <button class="close-btn" onclick="closeSettings()">&times;</button>
+            </div>
+            <form id="settings-form" class="form-stack">
+                <div class="field">
+                    <label for="set-name">Full Name</label>
+                    <input type="text" id="set-name" required>
+                </div>
+                <div class="field">
+                    <label for="set-profession">Profession</label>
+                    <input type="text" id="set-profession" required>
+                </div>
+                <div class="field">
+                    <label for="set-skills">Skills (comma separated)</label>
+                    <input type="text" id="set-skills">
+                </div>
+                <div class="field-row">
+                    <div class="field">
+                        <label for="set-country">Country</label>
+                        <input type="text" id="set-country" required>
+                    </div>
+                    <div class="field">
+                        <label for="set-city">City</label>
+                        <input type="text" id="set-city" required>
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="set-location">Default Location</label>
+                    <input type="text" id="set-location" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </form>
+        </div>
+    </div>
 
     <div id="notification-toast" class="toast"></div>
 

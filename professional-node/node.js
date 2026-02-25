@@ -15,6 +15,15 @@ let profile = JSON.parse(fs.readFileSync(profilePath, 'utf8'))
 
 const app = express()
 app.use(express.json())
+// Simple CORS middleware
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
 app.use(express.static(path.join(__dirname, '../frontend')))
 app.use('/images', express.static(path.join(__dirname, '../images')))
 
@@ -122,6 +131,11 @@ setTimeout(() => {
 }, 2000)
 
 app.get('/api/profile', (req, res) => res.json(profile))
+app.post('/api/profile', (req, res) => {
+  profile = { ...profile, ...req.body }
+  fs.writeFileSync(profilePath, JSON.stringify(profile, null, 2))
+  res.json({ success: true, profile })
+})
 app.get('/api/tasks', (req, res) => res.json(tasks))
 app.get('/api/mesh/stats', (req, res) => {
   res.json({

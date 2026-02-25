@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     startMeshStatsPolling();
     startTaskPolling();
     const taskForm = document.getElementById('task-form');
+    if (taskForm) {
     taskForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const taskData = {
@@ -34,6 +35,34 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('Failed to broadcast task.', 'danger');
         }
     });
+    }
+
+    const settingsForm = document.getElementById('settings-form');
+    if (settingsForm) {
+        settingsForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const updatedProfile = {
+                name: document.getElementById('set-name').value,
+                profession: document.getElementById('set-profession').value,
+                skills: document.getElementById('set-skills').value.split(',').map(s => s.trim()).filter(s => s !== ''),
+                country: document.getElementById('set-country').value,
+                city: document.getElementById('set-city').value,
+                location: document.getElementById('set-location').value
+            };
+            const response = await fetch('/api/profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedProfile)
+            });
+            if (response.ok) {
+                showToast('Profile updated successfully!');
+                closeSettings();
+                loadProfile();
+            } else {
+                showToast('Failed to update profile.', 'danger');
+            }
+        });
+    }
 });
 
 async function loadProfile() {
@@ -41,7 +70,9 @@ async function loadProfile() {
         const response = await fetch('/api/profile');
         const profile = await response.json();
         currentProfile = profile;
-        document.getElementById('node-name').textContent = profile.name;
+
+        // Update header UI
+        if (document.getElementById('node-name')) document.getElementById('node-name').textContent = profile.name;
         document.getElementById('node-profession').textContent = profile.profession;
         document.getElementById('node-rating').textContent = `★ ${profile.rating}`;
 
@@ -66,7 +97,17 @@ async function loadProfile() {
 
         if (profile.skills && profile.skills.length > 0) {
             const skillsDiv = document.getElementById('node-skills');
-            skillsDiv.innerHTML = profile.skills.map(s => `<span>${escapeHTML(s)}</span>`).join('');
+            if (skillsDiv) skillsDiv.innerHTML = profile.skills.map(s => `<span>${escapeHTML(s)}</span>`).join('');
+        }
+
+        // Pre-fill settings form
+        if (document.getElementById('set-name')) {
+            document.getElementById('set-name').value = profile.name || '';
+            document.getElementById('set-profession').value = profile.profession || '';
+            document.getElementById('set-skills').value = (profile.skills || []).join(', ');
+            document.getElementById('set-country').value = profile.country || '';
+            document.getElementById('set-city').value = profile.city || '';
+            document.getElementById('set-location').value = profile.location || '';
         }
     } catch (e) {
         console.error('Error loading profile:', e);
@@ -266,6 +307,14 @@ function startMeshStatsPolling() {
             console.error('Mesh stats error:', e);
         }
     }, 5000);
+}
+
+window.openSettings = function() {
+    document.getElementById('settings-modal').style.display = 'block';
+}
+
+window.closeSettings = function() {
+    document.getElementById('settings-modal').style.display = 'none';
 }
 
 function showToast(message, type = 'success') {
