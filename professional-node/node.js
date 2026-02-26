@@ -2,13 +2,15 @@ import express from 'express'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { multiaddr } from '@multiformats/multiaddr'
+import { peerIdFromString } from '@libp2p/peer-id'
 import { createNode } from './libp2p-network.js'
 import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
 import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const tasksPath = path.join(__dirname, 'tasks.json')
-const profilePath = path.join(__dirname, 'profile.json')
+const tasksPath = process.env.TASKS_PATH || path.join(__dirname, 'tasks.json')
+const profilePath = process.env.PROFILE_PATH || path.join(__dirname, 'profile.json')
 
 let tasks = JSON.parse(fs.readFileSync(tasksPath, 'utf8'))
 let profile = JSON.parse(fs.readFileSync(profilePath, 'utf8'))
@@ -25,7 +27,8 @@ app.use((req, res, next) => {
   if (req.method === 'OPTIONS') return res.sendStatus(200);
   next();
 });
-const p2pNode = await createNode()
+const bootstrapNodes = process.env.BOOTSTRAP ? process.env.BOOTSTRAP.split(',') : []
+const p2pNode = await createNode(bootstrapNodes)
 await p2pNode.start()
 console.log('P2P Node started, id:', p2pNode.peerId.toString())
 
@@ -119,6 +122,7 @@ setInterval(() => {
     profession: profile.profession,
     rating: profile.rating,
     completedTasks: profile.completedTasks,
+    isAvailable: profile.isAvailable,
     location: `${profile.city}, ${profile.country}`
   }, TOPIC_HEARTBEAT)
 }, 15000)
@@ -135,10 +139,47 @@ app.post('/api/profile', (req, res) => {
   res.json({ success: true, profile })
 })
 app.get('/api/tasks', (req, res) => res.json(tasks))
+app.get('/api/tasks/history', (req, res) => {
+  const history = tasks.filter(t => t.status === 'completed' && t.assignedTo === profile.id)
+  res.json(history)
+})
+app.post('/api/mesh/connect', async (req, res) => {
+  try {
+    const { multiaddr: maStr } = req.body
+    const ma = multiaddr(maStr)
+    const peerIdStr = ma.getPeerId()
+    if (peerIdStr) {
+      const pId = peerIdFromString(peerIdStr)
+      await p2pNode.peerStore.save(pId, {
+        multiaddrs: [ma]
+      })
+      await p2pNode.dial(pId)
+    } else {
+      await p2pNode.dial(ma)
+    }
+    res.json({ success: true })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
 app.get('/api/mesh/stats', (req, res) => {
+  const allProfessionals = Array.from(activePeers.values())
+  // Include self if it's not already there
+  if (!activePeers.has(profile.id)) {
+    allProfessionals.push({
+      id: profile.id,
+      name: profile.name,
+      profession: profile.profession,
+      rating: profile.rating,
+      completedTasks: profile.completedTasks,
+      isAvailable: profile.isAvailable,
+      location: `${profile.city}, ${profile.country}`
+    })
+  }
   res.json({
     peerCount: p2pNode.getPeers().length,
-    activeProfessionals: Array.from(activePeers.values())
+    addresses: p2pNode.getMultiaddrs().map(ma => ma.toString()),
+    activeProfessionals: allProfessionals
   })
 })
 app.post('/api/tasks', (req, res) => {
@@ -181,4 +222,5 @@ async function broadcast(data, topic) {
   }
 }
 app.use('/images', express.static(path.join(__dirname, '../images')))
-app.listen(3000, () => console.log('SkillMesh running at http://localhost:3000'))
+const PORT = process.env.PORT || 3000
+app.listen(PORT, () => console.log(`SkillMesh running at http://localhost:${PORT}`))

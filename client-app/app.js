@@ -1,5 +1,6 @@
 let nodeUrl = localStorage.getItem('skillmesh_node_url') || 'http://localhost:3000';
 let userId = localStorage.getItem('skillmesh_user_id') || 'user-' + Math.floor(Math.random() * 1000);
+let discoveredPros = [];
 
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('node-url').value = nodeUrl;
@@ -67,15 +68,16 @@ async function checkConnection() {
         if (response.ok) {
             const stats = await response.json();
             statusDiv.innerHTML = `<span class="dot" style="background-color: var(--success);"></span> Online (${stats.peerCount} Peers)`;
+            discoveredPros = stats.activeProfessionals || [];
 
             // Render Online Professionals
-            if (stats.activeProfessionals && stats.activeProfessionals.length > 0) {
-                peerList.innerHTML = stats.activeProfessionals.map(p => `
-                    <div class="peer-item">
+            if (discoveredPros.length > 0) {
+                peerList.innerHTML = discoveredPros.map(p => `
+                    <div class="peer-item" onclick="viewProProfile('${p.id}')">
                         <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=94a3b8&color=fff" class="peer-avatar">
                         <div class="peer-info">
                             <strong>${escapeHTML(p.name)}</strong>
-                            <span>${escapeHTML(p.profession)} • ★ ${p.rating} (${p.completedTasks || 0} done)</span>
+                            <span><span class="availability-dot ${p.isAvailable ? 'dot-online' : 'dot-offline'}"></span>${escapeHTML(p.profession)} • ★ ${p.rating}</span>
                         </div>
                     </div>
                 `).join('');
@@ -120,9 +122,14 @@ async function loadMyTasks() {
 
         myTasks.forEach(task => {
             const card = document.createElement('div');
-            card.className = 'task-card';
+
+            // Expiration Logic
+            const isExpired = task.deadline && new Date(task.deadline) < new Date() && task.status === 'open';
+            card.className = `task-card ${isExpired ? 'task-expired' : ''}`;
+
             const statusClass = `status-${task.status}`;
             const assignedText = task.assignedToName ? `<br><small>Assigned to: <strong>${escapeHTML(task.assignedToName)}</strong></small>` : '';
+            const expiredNotice = isExpired ? `<div class="expiration-notice">⚠️ TASK EXPIRED</div>` : '';
 
             card.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:flex-start;">
@@ -134,8 +141,10 @@ async function loadMyTasks() {
                     <span>📁 ${escapeHTML(task.type)}</span>
                     <span>📍 ${escapeHTML(task.location)}</span>
                     <span>🕒 ${new Date(task.timestamp).toLocaleDateString()}</span>
+                    ${task.deadline ? `<span style="color:${isExpired ? 'var(--danger)' : 'var(--secondary)'}">📅 ${escapeHTML(task.deadline)}</span>` : ''}
                 </div>
                 ${assignedText}
+                ${expiredNotice}
             `;
             taskList.appendChild(card);
         });
@@ -158,6 +167,51 @@ function escapeHTML(str) {
 
 window.openSettings = () => document.getElementById('settings-modal').style.display = 'block';
 window.closeSettings = () => document.getElementById('settings-modal').style.display = 'none';
+
+window.viewProProfile = (proId) => {
+    const pro = discoveredPros.find(p => p.id === proId);
+    if (!pro) return;
+
+    const modal = document.getElementById('pro-modal');
+    const body = document.getElementById('pro-details-body');
+
+    body.innerHTML = `
+        <div class="pro-header">
+            <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(pro.name)}&background=4f46e5&color=fff" alt="${escapeHTML(pro.name)}">
+            <div>
+                <h3>${escapeHTML(pro.name)}</h3>
+                <p class="text-muted">${escapeHTML(pro.profession)}</p>
+                <p class="text-xs ${pro.isAvailable ? 'text-success' : 'text-muted'}">
+                    <span class="availability-dot ${pro.isAvailable ? 'dot-online' : 'dot-offline'}"></span>
+                    ${pro.isAvailable ? 'Available Now' : 'Currently Offline'}
+                </p>
+            </div>
+        </div>
+        <div class="pro-stats">
+            <div class="pro-stat-item">
+                <label>Rating</label>
+                <span>★ ${pro.rating}</span>
+            </div>
+            <div class="pro-stat-item">
+                <label>Completed</label>
+                <span>${pro.completedTasks || 0}</span>
+            </div>
+        </div>
+        <div>
+            <label class="text-xs text-muted" style="display:block; margin-bottom:0.5rem;">LOCATION</label>
+            <p style="font-size:0.875rem;">📍 ${escapeHTML(pro.location)}</p>
+        </div>
+        <div class="btn-group" style="margin-top:1rem;">
+            <button class="btn btn-primary" style="width:100%" onclick="showToast('Contacting ${escapeHTML(pro.name)} via Mesh...')">Contact Professional</button>
+        </div>
+    `;
+
+    modal.style.display = 'block';
+};
+
+window.closeProModal = () => {
+    document.getElementById('pro-modal').style.display = 'none';
+};
 
 function showToast(message, type = 'success') {
     const toast = document.getElementById('notification-toast');

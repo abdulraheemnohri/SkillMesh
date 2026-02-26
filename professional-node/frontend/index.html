@@ -14,6 +14,13 @@
         <div class="container">
             <h1 class="logo">SkillMesh</h1>
             <div class="nav-right">
+                <div class="availability-toggle">
+                    <label class="switch">
+                        <input type="checkbox" id="availability-checkbox" onchange="toggleAvailability()">
+                        <span class="slider round"></span>
+                    </label>
+                    <span id="availability-label" class="text-xs">Online</span>
+                </div>
                 <button onclick="openSettings()" class="btn-icon" title="Profile Settings">⚙️</button>
                 <div id="professional-info" class="user-profile">
                     <img id="profile-img" style="display:none;" alt="Profile">
@@ -135,28 +142,41 @@
                         </div>
                     </div>
 
-                    <div class="filter-bar">
-                        <div class="filter-input-group">
-                            <input type="text" id="filter-country" placeholder="Country">
-                            <input type="text" id="filter-city" placeholder="City">
-                            <input type="text" id="filter-location" placeholder="Area">
-                            <select id="filter-type">
-                                <option value="">All Categories</option>
-                                <option value="Electrician">Electrician</option>
-                                <option value="Plumber">Plumber</option>
-                                <option value="Tutor">Tutor</option>
-                                <option value="Cleaner">Cleaner</option>
-                            </select>
-                            <select id="filter-scope">
-                                <option value="all">All Tasks</option>
-                                <option value="mine">My Claims</option>
-                            </select>
-                        </div>
-                        <button onclick="loadTasks()" class="btn btn-secondary">Filter Board</button>
+                    <div class="tabs">
+                        <button class="tab-btn active" onclick="switchTab('board')">Mesh Board</button>
+                        <button class="tab-btn" onclick="switchTab('history')">My History</button>
                     </div>
 
-                    <div id="task-list" class="task-grid">
-                        <!-- Tasks dynamically loaded here -->
+                    <div id="board-tab" class="tab-content active">
+                        <div class="filter-bar">
+                            <div class="filter-input-group">
+                                <input type="text" id="filter-country" placeholder="Country">
+                                <input type="text" id="filter-city" placeholder="City">
+                                <input type="text" id="filter-location" placeholder="Area">
+                                <select id="filter-type">
+                                    <option value="">All Categories</option>
+                                    <option value="Electrician">Electrician</option>
+                                    <option value="Plumber">Plumber</option>
+                                    <option value="Tutor">Tutor</option>
+                                    <option value="Cleaner">Cleaner</option>
+                                </select>
+                                <select id="filter-scope">
+                                    <option value="all">All Tasks</option>
+                                    <option value="mine">My Claims</option>
+                                </select>
+                            </div>
+                            <button onclick="loadTasks()" class="btn btn-secondary">Filter Board</button>
+                        </div>
+
+                        <div id="task-list" class="task-grid">
+                            <!-- Tasks dynamically loaded here -->
+                        </div>
+                    </div>
+
+                    <div id="history-tab" class="tab-content">
+                        <div id="history-list" class="task-grid">
+                            <!-- Completed tasks here -->
+                        </div>
                     </div>
                 </section>
             </div>
@@ -178,6 +198,10 @@
                 <div class="field">
                     <label for="set-profession">Profession</label>
                     <input type="text" id="set-profession" required>
+                </div>
+                <div class="field">
+                    <label for="set-image">Profile Image Filename (e.g., ali.jpg)</label>
+                    <input type="text" id="set-image">
                 </div>
                 <div class="field">
                     <label for="set-skills">Skills (comma separated)</label>

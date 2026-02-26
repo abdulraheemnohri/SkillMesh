@@ -1,12 +1,17 @@
 {
   "id": "node-001",
-  "name": "Ali Khan",
-  "profession": "Electrician",
-  "skills": ["Inverter Repair", "Wiring", "LED Installation"],
+  "name": "Ali Updated",
+  "profession": "Master Electrician",
+  "skills": [
+    "Solar",
+    "Battery",
+    "Inverters"
+  ],
   "country": "Pakistan",
   "city": "Karachi",
   "location": "Clifton",
-  "profileImage": "ali.jpg",
+  "profileImage": "updated_ali.jpg",
   "rating": 4.8,
-  "completedTasks": 12
+  "completedTasks": 12,
+  "isAvailable": false
 }

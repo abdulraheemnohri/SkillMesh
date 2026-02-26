@@ -44,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const updatedProfile = {
                 name: document.getElementById('set-name').value,
                 profession: document.getElementById('set-profession').value,
+                profileImage: document.getElementById('set-image').value,
                 skills: document.getElementById('set-skills').value.split(',').map(s => s.trim()).filter(s => s !== ''),
                 country: document.getElementById('set-country').value,
                 city: document.getElementById('set-city').value,
@@ -100,10 +101,20 @@ async function loadProfile() {
             if (skillsDiv) skillsDiv.innerHTML = profile.skills.map(s => `<span>${escapeHTML(s)}</span>`).join('');
         }
 
+        // Update availability UI
+        const availCheckbox = document.getElementById('availability-checkbox');
+        const availLabel = document.getElementById('availability-label');
+        if (availCheckbox) {
+            availCheckbox.checked = profile.isAvailable;
+            availLabel.textContent = profile.isAvailable ? 'Online' : 'Offline';
+            availLabel.className = profile.isAvailable ? 'text-xs text-success' : 'text-xs text-muted';
+        }
+
         // Pre-fill settings form
         if (document.getElementById('set-name')) {
             document.getElementById('set-name').value = profile.name || '';
             document.getElementById('set-profession').value = profile.profession || '';
+            document.getElementById('set-image').value = profile.profileImage || '';
             document.getElementById('set-skills').value = (profile.skills || []).join(', ');
             document.getElementById('set-country').value = profile.country || '';
             document.getElementById('set-city').value = profile.city || '';
@@ -315,6 +326,83 @@ window.openSettings = function() {
 
 window.closeSettings = function() {
     document.getElementById('settings-modal').style.display = 'none';
+}
+
+window.toggleAvailability = async function() {
+    const availCheckbox = document.getElementById('availability-checkbox');
+    const availLabel = document.getElementById('availability-label');
+    const isAvailable = availCheckbox.checked;
+
+    availLabel.textContent = isAvailable ? 'Online' : 'Offline';
+    availLabel.className = isAvailable ? 'text-xs text-success' : 'text-xs text-muted';
+
+    const response = await fetch('/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isAvailable })
+    });
+
+    if (response.ok) {
+        showToast(`You are now ${isAvailable ? 'Online' : 'Offline'}`);
+        currentProfile.isAvailable = isAvailable;
+    } else {
+        showToast('Failed to update availability.', 'danger');
+    }
+}
+
+window.switchTab = function(tabName) {
+    // Buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.textContent.toLowerCase().includes(tabName)) btn.classList.add('active');
+    });
+
+    // Content
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    document.getElementById(`${tabName}-tab`).classList.add('active');
+
+    if (tabName === 'history') {
+        loadHistory();
+    }
+}
+
+async function loadHistory() {
+    try {
+        const response = await fetch('/api/tasks/history');
+        const history = await response.json();
+        const historyList = document.getElementById('history-list');
+        historyList.innerHTML = '';
+
+        if (history.length === 0) {
+            historyList.innerHTML = '<p class="text-muted" style="text-align:center; padding: 2rem;">No completed tasks in your history.</p>';
+            return;
+        }
+
+        history.forEach(task => {
+            const card = document.createElement('div');
+            card.className = 'task-card status-completed';
+            card.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <h3>${escapeHTML(task.title)}</h3>
+                    <span class="task-status-badge status-completed">COMPLETED</span>
+                </div>
+                <p>${escapeHTML(task.description)}</p>
+                <div class="task-meta">
+                    <span class="meta-item">📁 ${escapeHTML(task.type)}</span>
+                    <span class="meta-item">📍 ${escapeHTML(task.location)}</span>
+                    <span class="meta-item">📅 Done: ${new Date(task.timestamp).toLocaleDateString()}</span>
+                </div>
+                <div class="reputation-gain" style="margin-top: 1rem; font-size: 0.75rem; color: var(--success); font-weight: 600;">
+                    +10 Rep Points Earned
+                </div>
+            `;
+            historyList.appendChild(card);
+        });
+    } catch (e) {
+        console.error('Error loading history:', e);
+    }
 }
 
 function showToast(message, type = 'success') {

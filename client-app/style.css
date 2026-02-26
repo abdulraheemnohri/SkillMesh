@@ -87,3 +87,87 @@ textarea { min-height: 80px; resize: vertical; }
 .toast.show { transform: translateY(0); }
 .text-xs { font-size: 0.75rem; }
 .text-muted { color: var(--text-muted); }
+
+/* Task Expiration */
+.task-expired {
+    border: 2px solid var(--danger);
+    background: #fff1f2;
+}
+.expiration-notice {
+    color: var(--danger);
+    font-weight: 700;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* Pro Profile View */
+.pro-profile-view {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+.pro-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+.pro-header img {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 3px solid var(--primary);
+}
+.pro-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+.pro-stat-item {
+    background: #f1f5f9;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    text-align: center;
+}
+.pro-stat-item label {
+    display: block;
+    font-size: 0.625rem;
+    text-transform: uppercase;
+    color: var(--secondary);
+    margin-bottom: 0.25rem;
+}
+.pro-stat-item span {
+    font-weight: 700;
+    font-size: 1rem;
+}
+.pro-skills-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+.pro-skills-tags span {
+    background: #e0e7ff;
+    color: #4338ca;
+    padding: 0.25rem 0.625rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+.peer-item {
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.peer-item:hover {
+    background: #f1f5f9;
+}
+.availability-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 4px;
+}
+.dot-online { background-color: var(--success); }
+.dot-offline { background-color: var(--secondary); }
