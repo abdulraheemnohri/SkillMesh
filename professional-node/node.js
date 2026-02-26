@@ -2,16 +2,20 @@ import express from 'express'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { multiaddr } from '@multiformats/multiaddr'
+import { peerIdFromString } from '@libp2p/peer-id'
 import { createNode } from './libp2p-network.js'
 import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
 import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const tasksPath = path.join(__dirname, 'tasks.json')
-const profilePath = path.join(__dirname, 'profile.json')
+const tasksPath = process.env.TASKS_PATH || path.join(__dirname, 'tasks.json')
+const profilePath = process.env.PROFILE_PATH || path.join(__dirname, 'profile.json')
+const chatsPath = path.join(__dirname, 'chats.json')
 
 let tasks = JSON.parse(fs.readFileSync(tasksPath, 'utf8'))
 let profile = JSON.parse(fs.readFileSync(profilePath, 'utf8'))
+let chats = JSON.parse(fs.readFileSync(chatsPath, 'utf8'))
 
 const app = express()
 app.use(express.static(path.join(path.dirname(fileURLToPath(import.meta.url)), 'frontend')))
@@ -25,9 +29,17 @@ app.use((req, res, next) => {
   if (req.method === 'OPTIONS') return res.sendStatus(200);
   next();
 });
-const p2pNode = await createNode()
+const bootstrapNodes = process.env.BOOTSTRAP ? process.env.BOOTSTRAP.split(',') : []
+const p2pNode = await createNode(bootstrapNodes)
 await p2pNode.start()
-console.log('P2P Node started, id:', p2pNode.peerId.toString())
+const peerIdStr = p2pNode.peerId.toString()
+console.log('P2P Node started, id:', peerIdStr)
+
+// Ensure unique ID matches PeerID
+if (profile.id !== peerIdStr) {
+  profile.id = peerIdStr
+  fs.writeFileSync(profilePath, JSON.stringify(profile, null, 2))
+}
 
 const TOPIC_TASKS = 'skillmesh-tasks'
 const TOPIC_HEARTBEAT = 'skillmesh-heartbeat'
@@ -53,6 +65,32 @@ function handleP2PMessage(message) {
   let changed = false
   if (message.type === 'task-broadcast') {
     if (!tasks.find(t => t.id === message.task.id)) { tasks.push(message.task); changed = true; }
+  } else if (message.type === 'contact-request') {
+    const task = tasks.find(t => t.id === message.taskId)
+    // Only reveal if we have the number (original gateway) and it is assigned to requester
+    if (task && task.mobileNumber && task.assignedTo === message.requesterId) {
+      broadcast({
+        type: 'contact-response',
+        taskId: task.id,
+        mobileNumber: task.mobileNumber,
+        targetId: message.requesterId
+      }, TOPIC_TASKS)
+    }
+  } else if (message.type === 'contact-response') {
+    if (message.targetId === profile.id) {
+      const task = tasks.find(t => t.id === message.taskId)
+      if (task) {
+        task.mobileNumber = message.mobileNumber
+        changed = true
+      }
+    }
+  } else if (message.type === 'chat-message') {
+    if (!chats[message.taskId]) chats[message.taskId] = []
+    // Avoid duplicates
+    if (!chats[message.taskId].find(m => m.id === message.id)) {
+      chats[message.taskId].push(message)
+      fs.writeFileSync(chatsPath, JSON.stringify(chats, null, 2))
+    }
   } else if (message.type === 'task-claim') {
     const task = tasks.find(t => t.id === message.taskId)
     if (task) {
@@ -101,6 +139,19 @@ function handleHeartbeat(data) {
     ...data,
     lastSeen: Date.now()
   })
+
+  // Auto-connect to discovered addresses
+  if (data.addresses && data.id !== profile.id) {
+    data.addresses.forEach(async (addr) => {
+      try {
+        const ma = multiaddr(addr)
+        const isConnected = p2pNode.getPeers().some(p => p.toString() === data.id)
+        if (!isConnected) {
+          await p2pNode.dial(ma)
+        }
+      } catch (e) {}
+    })
+  }
 }
 
 // Cleanup inactive peers every 30 seconds
@@ -119,7 +170,9 @@ setInterval(() => {
     profession: profile.profession,
     rating: profile.rating,
     completedTasks: profile.completedTasks,
-    location: `${profile.city}, ${profile.country}`
+    isAvailable: profile.isAvailable,
+    location: `${profile.city}, ${profile.country}`,
+    addresses: p2pNode.getMultiaddrs().map(ma => ma.toString())
   }, TOPIC_HEARTBEAT)
 }, 15000)
 
@@ -135,16 +188,66 @@ app.post('/api/profile', (req, res) => {
   res.json({ success: true, profile })
 })
 app.get('/api/tasks', (req, res) => res.json(tasks))
+app.get('/api/tasks/history', (req, res) => {
+  const history = tasks.filter(t => t.status === 'completed' && t.assignedTo === profile.id)
+  res.json(history)
+})
+app.post('/api/mesh/connect', async (req, res) => {
+  try {
+    const { multiaddr: maStr } = req.body
+    const ma = multiaddr(maStr)
+    await p2pNode.dial(ma)
+    res.json({ success: true })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
 app.get('/api/mesh/stats', (req, res) => {
+  const allProfessionals = Array.from(activePeers.values())
+  // Include self if it's not already there
+  if (!activePeers.has(profile.id)) {
+    allProfessionals.push({
+      id: profile.id,
+      name: profile.name,
+      profession: profile.profession,
+      rating: profile.rating,
+      completedTasks: profile.completedTasks,
+      isAvailable: profile.isAvailable,
+      location: `${profile.city}, ${profile.country}`
+    })
+  }
   res.json({
     peerCount: p2pNode.getPeers().length,
-    activeProfessionals: Array.from(activePeers.values())
+    addresses: p2pNode.getMultiaddrs().map(ma => ma.toString()),
+    activeProfessionals: allProfessionals
   })
 })
 app.post('/api/tasks', (req, res) => {
-  tasks.push(req.body); fs.writeFileSync(tasksPath, JSON.stringify(tasks, null, 2))
-  broadcast({ type: 'task-broadcast', task: req.body }, TOPIC_TASKS)
-  res.status(201).json(req.body)
+  const task = req.body
+  tasks.push(task); fs.writeFileSync(tasksPath, JSON.stringify(tasks, null, 2))
+
+  // Strip mobile number before broadcast
+  const broadcastTask = { ...task }
+  delete broadcastTask.mobileNumber
+
+  broadcast({ type: 'task-broadcast', task: broadcastTask }, TOPIC_TASKS)
+  res.status(201).json(task)
+})
+
+app.get('/api/tasks/:taskId/contact', (req, res) => {
+  const task = tasks.find(t => t.id === req.params.taskId)
+  if (task) {
+    if (task.mobileNumber) {
+      return res.json({ mobileNumber: task.mobileNumber })
+    }
+    // Request from mesh
+    broadcast({
+      type: 'contact-request',
+      taskId: task.id,
+      requesterId: profile.id
+    }, TOPIC_TASKS)
+    res.json({ status: 'requested' })
+  } else res.status(404).json({ error: 'Task not found' })
 })
 app.post('/api/tasks/claim', (req, res) => {
   const task = tasks.find(t => t.id === req.body.taskId)
@@ -165,6 +268,29 @@ app.post('/api/tasks/claim', (req, res) => {
     res.json({ success: true })
   } else res.status(400).json({ success: false })
 })
+app.get('/api/chat/:taskId', (req, res) => {
+  res.json(chats[req.params.taskId] || [])
+})
+
+app.post('/api/chat', (req, res) => {
+  const { taskId, text, senderId, senderName } = req.body
+  const msg = {
+    id: 'msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+    taskId,
+    text,
+    senderId,
+    senderName,
+    timestamp: new Date().toISOString()
+  }
+
+  if (!chats[taskId]) chats[taskId] = []
+  chats[taskId].push(msg)
+  fs.writeFileSync(chatsPath, JSON.stringify(chats, null, 2))
+
+  broadcast({ type: 'chat-message', ...msg }, TOPIC_TASKS)
+  res.status(201).json(msg)
+})
+
 app.post('/api/tasks/complete', (req, res) => {
   const task = tasks.find(t => t.id === req.body.taskId)
   if (task && task.assignedTo === profile.id) {
@@ -181,4 +307,5 @@ async function broadcast(data, topic) {
   }
 }
 app.use('/images', express.static(path.join(__dirname, '../images')))
-app.listen(3000, () => console.log('SkillMesh running at http://localhost:3000'))
+const PORT = process.env.PORT || 3000
+app.listen(PORT, () => console.log(`SkillMesh running at http://localhost:${PORT}`))

@@ -1,0 +1,26 @@
+name: SkillMesh CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install Professional Node dependencies
+        run: |
+          cd professional-node
+          npm install
+      - name: Check lint/build
+        run: |
+          cd professional-node
+          # If we had a test script: npm test
+          node -c node.js

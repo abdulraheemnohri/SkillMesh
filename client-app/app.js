@@ -1,5 +1,9 @@
 let nodeUrl = localStorage.getItem('skillmesh_node_url') || 'http://localhost:3000';
 let userId = localStorage.getItem('skillmesh_user_id') || 'user-' + Math.floor(Math.random() * 1000);
+localStorage.setItem('skillmesh_user_id', userId);
+let discoveredPros = [];
+let currentChatTaskId = null;
+let chatInterval = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('node-url').value = nodeUrl;
@@ -18,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
             country: document.getElementById('country').value,
             city: document.getElementById('city').value,
             location: document.getElementById('location').value,
+            mobileNumber: document.getElementById('mobile').value,
             deadline: document.getElementById('deadline').value,
             timestamp: new Date().toISOString(),
             id: 'task-' + Date.now(),
@@ -67,15 +72,16 @@ async function checkConnection() {
         if (response.ok) {
             const stats = await response.json();
             statusDiv.innerHTML = `<span class="dot" style="background-color: var(--success);"></span> Online (${stats.peerCount} Peers)`;
+            discoveredPros = stats.activeProfessionals || [];
 
             // Render Online Professionals
-            if (stats.activeProfessionals && stats.activeProfessionals.length > 0) {
-                peerList.innerHTML = stats.activeProfessionals.map(p => `
-                    <div class="peer-item">
+            if (discoveredPros.length > 0) {
+                peerList.innerHTML = discoveredPros.map(p => `
+                    <div class="peer-item" onclick="viewProProfile('${p.id}')">
                         <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=94a3b8&color=fff" class="peer-avatar">
                         <div class="peer-info">
                             <strong>${escapeHTML(p.name)}</strong>
-                            <span>${escapeHTML(p.profession)} • ★ ${p.rating} (${p.completedTasks || 0} done)</span>
+                            <span><span class="availability-dot ${p.isAvailable ? 'dot-online' : 'dot-offline'}"></span>${escapeHTML(p.profession)} • ★ ${p.rating}</span>
                         </div>
                     </div>
                 `).join('');
@@ -120,9 +126,14 @@ async function loadMyTasks() {
 
         myTasks.forEach(task => {
             const card = document.createElement('div');
-            card.className = 'task-card';
+
+            // Expiration Logic
+            const isExpired = task.deadline && new Date(task.deadline) < new Date() && task.status === 'open';
+            card.className = `task-card ${isExpired ? 'task-expired' : ''}`;
+
             const statusClass = `status-${task.status}`;
             const assignedText = task.assignedToName ? `<br><small>Assigned to: <strong>${escapeHTML(task.assignedToName)}</strong></small>` : '';
+            const expiredNotice = isExpired ? `<div class="expiration-notice">⚠️ TASK EXPIRED</div>` : '';
 
             card.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:flex-start;">
@@ -134,8 +145,16 @@ async function loadMyTasks() {
                     <span>📁 ${escapeHTML(task.type)}</span>
                     <span>📍 ${escapeHTML(task.location)}</span>
                     <span>🕒 ${new Date(task.timestamp).toLocaleDateString()}</span>
+                    ${task.deadline ? `<span style="color:${isExpired ? 'var(--danger)' : 'var(--secondary)'}">📅 ${escapeHTML(task.deadline)}</span>` : ''}
+                </div>
+                <div id="contact-${task.id}" class="task-contact" style="margin-top:0.5rem; font-weight:600; font-size:0.875rem;">
+                    📱 Mobile: ${task.mobileNumber || 'Hidden until claimed'}
                 </div>
                 ${assignedText}
+                ${expiredNotice}
+                <div class="task-actions" style="margin-top:1rem; display:flex; gap:0.5rem;">
+                    ${task.status !== 'open' ? `<button class="btn btn-primary btn-sm" onclick="openChat('${task.id}', '${escapeHTML(task.title)}')">Open Chat</button>` : ''}
+                </div>
             `;
             taskList.appendChild(card);
         });
@@ -158,6 +177,107 @@ function escapeHTML(str) {
 
 window.openSettings = () => document.getElementById('settings-modal').style.display = 'block';
 window.closeSettings = () => document.getElementById('settings-modal').style.display = 'none';
+
+window.viewProProfile = (proId) => {
+    const pro = discoveredPros.find(p => p.id === proId);
+    if (!pro) return;
+
+    const modal = document.getElementById('pro-modal');
+    const body = document.getElementById('pro-details-body');
+
+    body.innerHTML = `
+        <div class="pro-header">
+            <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(pro.name)}&background=4f46e5&color=fff" alt="${escapeHTML(pro.name)}">
+            <div>
+                <h3>${escapeHTML(pro.name)}</h3>
+                <p class="text-muted">${escapeHTML(pro.profession)}</p>
+                <p class="text-xs ${pro.isAvailable ? 'text-success' : 'text-muted'}">
+                    <span class="availability-dot ${pro.isAvailable ? 'dot-online' : 'dot-offline'}"></span>
+                    ${pro.isAvailable ? 'Available Now' : 'Currently Offline'}
+                </p>
+            </div>
+        </div>
+        <div class="pro-stats">
+            <div class="pro-stat-item">
+                <label>Rating</label>
+                <span>★ ${pro.rating}</span>
+            </div>
+            <div class="pro-stat-item">
+                <label>Completed</label>
+                <span>${pro.completedTasks || 0}</span>
+            </div>
+        </div>
+        <div>
+            <label class="text-xs text-muted" style="display:block; margin-bottom:0.5rem;">LOCATION</label>
+            <p style="font-size:0.875rem;">📍 ${escapeHTML(pro.location)}</p>
+        </div>
+        <div class="btn-group" style="margin-top:1rem;">
+            <button class="btn btn-primary" style="width:100%" onclick="showToast('Contacting ${escapeHTML(pro.name)} via Mesh...')">Contact Professional</button>
+        </div>
+    `;
+
+    modal.style.display = 'block';
+};
+
+window.closeProModal = () => {
+    document.getElementById('pro-modal').style.display = 'none';
+};
+
+window.openChat = (taskId, taskTitle) => {
+    currentChatTaskId = taskId;
+    document.getElementById('chat-title').textContent = `Chat: ${taskTitle}`;
+    document.getElementById('chat-modal').style.display = 'block';
+    loadChatMessages();
+    if (chatInterval) clearInterval(chatInterval);
+    chatInterval = setInterval(loadChatMessages, 3000);
+};
+
+window.closeChat = () => {
+    document.getElementById('chat-modal').style.display = 'none';
+    if (chatInterval) clearInterval(chatInterval);
+};
+
+async function loadChatMessages() {
+    if (!currentChatTaskId) return;
+    try {
+        const response = await fetch(`${nodeUrl}/api/chat/${currentChatTaskId}`);
+        const messages = await response.json();
+        const chatBox = document.getElementById('chat-messages');
+        chatBox.innerHTML = messages.map(m => `
+            <div class="chat-msg ${m.senderId === userId ? 'mine' : 'theirs'}">
+                <span class="chat-sender">${escapeHTML(m.senderName)}</span>
+                ${escapeHTML(m.text)}
+                <span class="chat-time">${new Date(m.timestamp).toLocaleTimeString()}</span>
+            </div>
+        `).join('');
+        chatBox.scrollTop = chatBox.scrollHeight;
+    } catch (err) {}
+}
+
+window.sendChatMessage = async () => {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text || !currentChatTaskId) return;
+
+    try {
+        const response = await fetch(`${nodeUrl}/api/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                taskId: currentChatTaskId,
+                text,
+                senderId: userId,
+                senderName: 'User Poster'
+            })
+        });
+        if (response.ok) {
+            input.value = '';
+            loadChatMessages();
+        }
+    } catch (err) {
+        showToast('Failed to send message.', 'danger');
+    }
+};
 
 function showToast(message, type = 'success') {
     const toast = document.getElementById('notification-toast');

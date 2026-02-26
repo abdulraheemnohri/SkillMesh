@@ -1,0 +1,22 @@
+{
+  "chat-task-001": [
+    {
+      "id": "msg-1772066429535-ns7sn",
+      "taskId": "chat-task-001",
+      "text": "Hello Mesh!",
+      "senderId": "user-1",
+      "senderName": "Alice",
+      "timestamp": "2026-02-26T00:40:29.535Z"
+    }
+  ],
+  "ui-chat-test-3": [
+    {
+      "id": "msg-1772066795355-02cz8",
+      "taskId": "ui-chat-test-3",
+      "text": "Hello from UI test!",
+      "senderId": "12D3KooWQg2A3XQWkuXwM5Y5DM3gJ3aXAe87b5Gsd7vew8xaPU1b",
+      "senderName": "Ali Updated",
+      "timestamp": "2026-02-26T00:46:35.355Z"
+    }
+  ]
+}

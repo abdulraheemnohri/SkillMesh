@@ -71,6 +71,10 @@
                             <input type="text" id="location" placeholder="Clifton Block 5" required>
                         </div>
                         <div class="field">
+                            <label for="mobile">Mobile Number (Visible only to claimer)</label>
+                            <input type="tel" id="mobile" placeholder="+92 300 1234567" required>
+                        </div>
+                        <div class="field">
                             <label for="deadline">Need by (Optional)</label>
                             <input type="date" id="deadline">
                         </div>
@@ -129,6 +133,36 @@
                 </div>
                 <button type="submit" class="btn btn-primary">Save & Reconnect</button>
             </form>
+        </div>
+    </div>
+
+    <!-- Chat Modal -->
+    <div id="chat-modal" class="modal">
+        <div class="modal-content chat-modal-content">
+            <div class="modal-header">
+                <h2 id="chat-title">Chat with Professional</h2>
+                <button class="close-btn" onclick="closeChat()">&times;</button>
+            </div>
+            <div id="chat-messages" class="chat-messages">
+                <!-- Messages here -->
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Type a message...">
+                <button onclick="sendChatMessage()" class="btn btn-primary">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Professional Details Modal -->
+    <div id="pro-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Professional Details</h2>
+                <button class="close-btn" onclick="closeProModal()">&times;</button>
+            </div>
+            <div id="pro-details-body" class="pro-profile-view">
+                <!-- Details loaded here -->
+            </div>
         </div>
     </div>
 

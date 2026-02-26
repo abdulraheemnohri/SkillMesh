@@ -1,4 +1,6 @@
 let currentProfile = null;
+let currentChatTaskId = null;
+let chatInterval = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     loadProfile();
@@ -16,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
             country: document.getElementById('country').value,
             city: document.getElementById('city').value,
             location: document.getElementById('location').value,
+            mobileNumber: document.getElementById('mobile').value,
             deadline: document.getElementById('deadline').value,
             timestamp: new Date().toISOString(),
             id: 'task-' + Date.now(),
@@ -44,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const updatedProfile = {
                 name: document.getElementById('set-name').value,
                 profession: document.getElementById('set-profession').value,
+                profileImage: document.getElementById('set-image').value,
                 skills: document.getElementById('set-skills').value.split(',').map(s => s.trim()).filter(s => s !== ''),
                 country: document.getElementById('set-country').value,
                 city: document.getElementById('set-city').value,
@@ -100,10 +104,20 @@ async function loadProfile() {
             if (skillsDiv) skillsDiv.innerHTML = profile.skills.map(s => `<span>${escapeHTML(s)}</span>`).join('');
         }
 
+        // Update availability UI
+        const availCheckbox = document.getElementById('availability-checkbox');
+        const availLabel = document.getElementById('availability-label');
+        if (availCheckbox) {
+            availCheckbox.checked = profile.isAvailable;
+            availLabel.textContent = profile.isAvailable ? 'Online' : 'Offline';
+            availLabel.className = profile.isAvailable ? 'text-xs text-success' : 'text-xs text-muted';
+        }
+
         // Pre-fill settings form
         if (document.getElementById('set-name')) {
             document.getElementById('set-name').value = profile.name || '';
             document.getElementById('set-profession').value = profile.profession || '';
+            document.getElementById('set-image').value = profile.profileImage || '';
             document.getElementById('set-skills').value = (profile.skills || []).join(', ');
             document.getElementById('set-country').value = profile.country || '';
             document.getElementById('set-city').value = profile.city || '';
@@ -158,6 +172,7 @@ async function loadTasks() {
             const taskCard = document.createElement('div');
             taskCard.className = 'task-card';
 
+            const isAssignedToMe = currentProfile && task.assignedTo === currentProfile.id;
             const safeTitle = escapeHTML(task.title);
             const safeDesc = escapeHTML(task.description);
             const safeType = escapeHTML(task.type);
@@ -182,7 +197,14 @@ async function loadTasks() {
                 </div>
                 <div class="task-actions">
                     ${task.status === 'open' ? `<button class="btn btn-primary btn-sm" onclick="claimTask('${task.id}')">Claim Task</button>` : ''}
-                    ${task.status === 'assigned' ? `<button class="btn btn-secondary btn-sm" onclick="completeTask('${task.id}')">Mark Completed</button>` : ''}
+                    ${isAssignedToMe ? `
+                        <button class="btn btn-secondary btn-sm" onclick="completeTask('${task.id}')">Mark Completed</button>
+                        <button class="btn btn-primary btn-sm" onclick="getContact('${task.id}')">Show Contact</button>
+                        <button class="btn btn-primary btn-sm" onclick="openChat('${task.id}', '${safeTitle}')">Chat</button>
+                    ` : ''}
+                </div>
+                <div id="contact-${task.id}" style="margin-top:0.5rem; font-weight:600; display:${task.mobileNumber ? 'block' : 'none'}">
+                    📱 Contact: ${task.mobileNumber || ''}
                 </div>
             `;
             taskList.appendChild(taskCard);
@@ -316,6 +338,158 @@ window.openSettings = function() {
 window.closeSettings = function() {
     document.getElementById('settings-modal').style.display = 'none';
 }
+
+window.toggleAvailability = async function() {
+    const availCheckbox = document.getElementById('availability-checkbox');
+    const availLabel = document.getElementById('availability-label');
+    const isAvailable = availCheckbox.checked;
+
+    availLabel.textContent = isAvailable ? 'Online' : 'Offline';
+    availLabel.className = isAvailable ? 'text-xs text-success' : 'text-xs text-muted';
+
+    const response = await fetch('/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isAvailable })
+    });
+
+    if (response.ok) {
+        showToast(`You are now ${isAvailable ? 'Online' : 'Offline'}`);
+        currentProfile.isAvailable = isAvailable;
+    } else {
+        showToast('Failed to update availability.', 'danger');
+    }
+}
+
+window.switchTab = function(tabName) {
+    // Buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.textContent.toLowerCase().includes(tabName)) btn.classList.add('active');
+    });
+
+    // Content
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    document.getElementById(`${tabName}-tab`).classList.add('active');
+
+    if (tabName === 'history') {
+        loadHistory();
+    }
+}
+
+async function loadHistory() {
+    try {
+        const response = await fetch('/api/tasks/history');
+        const history = await response.json();
+        const historyList = document.getElementById('history-list');
+        historyList.innerHTML = '';
+
+        if (history.length === 0) {
+            historyList.innerHTML = '<p class="text-muted" style="text-align:center; padding: 2rem;">No completed tasks in your history.</p>';
+            return;
+        }
+
+        history.forEach(task => {
+            const card = document.createElement('div');
+            card.className = 'task-card status-completed';
+            card.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <h3>${escapeHTML(task.title)}</h3>
+                    <span class="task-status-badge status-completed">COMPLETED</span>
+                </div>
+                <p>${escapeHTML(task.description)}</p>
+                <div class="task-meta">
+                    <span class="meta-item">📁 ${escapeHTML(task.type)}</span>
+                    <span class="meta-item">📍 ${escapeHTML(task.location)}</span>
+                    <span class="meta-item">📅 Done: ${new Date(task.timestamp).toLocaleDateString()}</span>
+                </div>
+                <div class="reputation-gain" style="margin-top: 1rem; font-size: 0.75rem; color: var(--success); font-weight: 600;">
+                    +10 Rep Points Earned
+                </div>
+            `;
+            historyList.appendChild(card);
+        });
+    } catch (e) {
+        console.error('Error loading history:', e);
+    }
+}
+
+window.getContact = async function(taskId) {
+    try {
+        const response = await fetch(`/api/tasks/${taskId}/contact`);
+        const data = await response.json();
+        if (data.mobileNumber) {
+            const div = document.getElementById(`contact-${taskId}`);
+            div.textContent = `📱 Contact: ${data.mobileNumber}`;
+            div.style.display = 'block';
+            showToast('Contact information retrieved!');
+        } else if (data.status === 'requested') {
+            showToast('Contact requested from poster. Wait a moment...');
+            // Poll for update
+            setTimeout(() => getContact(taskId), 5000);
+        }
+    } catch (e) {
+        showToast('Failed to retrieve contact.', 'danger');
+    }
+}
+
+window.openChat = (taskId, taskTitle) => {
+    currentChatTaskId = taskId;
+    document.getElementById('chat-title').textContent = `Chat: ${taskTitle}`;
+    document.getElementById('chat-modal').style.display = 'block';
+    loadChatMessages();
+    if (chatInterval) clearInterval(chatInterval);
+    chatInterval = setInterval(loadChatMessages, 3000);
+};
+
+window.closeChat = () => {
+    document.getElementById('chat-modal').style.display = 'none';
+    if (chatInterval) clearInterval(chatInterval);
+};
+
+async function loadChatMessages() {
+    if (!currentChatTaskId) return;
+    try {
+        const response = await fetch(`/api/chat/${currentChatTaskId}`);
+        const messages = await response.json();
+        const chatBox = document.getElementById('chat-messages');
+        chatBox.innerHTML = messages.map(m => `
+            <div class="chat-msg ${m.senderId === currentProfile.id ? 'mine' : 'theirs'}">
+                <span class="chat-sender">${escapeHTML(m.senderName)}</span>
+                ${escapeHTML(m.text)}
+                <span class="chat-time">${new Date(m.timestamp).toLocaleTimeString()}</span>
+            </div>
+        `).join('');
+        chatBox.scrollTop = chatBox.scrollHeight;
+    } catch (err) {}
+}
+
+window.sendChatMessage = async () => {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text || !currentChatTaskId) return;
+
+    try {
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                taskId: currentChatTaskId,
+                text,
+                senderId: currentProfile.id,
+                senderName: currentProfile.name
+            })
+        });
+        if (response.ok) {
+            input.value = '';
+            loadChatMessages();
+        }
+    } catch (err) {
+        showToast('Failed to send message.', 'danger');
+    }
+};
 
 function showToast(message, type = 'success') {
     const toast = document.getElementById('notification-toast');

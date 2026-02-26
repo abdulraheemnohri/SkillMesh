@@ -1,5 +1,9 @@
 # SkillMesh – Professional P2P Task Network
 
+[![SkillMesh CI](https://github.com/USER_NAME/REPO_NAME/actions/workflows/ci.yml/badge.svg)](https://github.com/USER_NAME/REPO_NAME/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub Pages](https://img.shields.io/badge/Deployed%20to-GitHub%20Pages-blue?logo=github)](https://USER_NAME.github.io/REPO_NAME/)
+
 SkillMesh is a fully decentralized professional task network that connects users posting tasks with local professionals (Electricians, Plumbers, Tutors, etc.) using a P2P mesh network.
 
 The ecosystem consists of two variants:
@@ -14,7 +18,10 @@ The ecosystem consists of two variants:
 - **Dual-App Ecosystem:** Optimized UI for both professionals (full dashboard) and users (simplified posting).
 - **Mesh Heartbeat & Discovery:** See online professionals and network status in real-time.
 - **P2P Sync & Conflict Resolution:** Built on `libp2p` with "First-Claim-Wins" logic.
+- **P2P Chat System:** Real-time mesh-synced chat for task coordination.
+- **Private Contact Reveal:** Mobile numbers are hidden during broadcast and only revealed to the claimer.
 - **Multi-Location Filtering:** Filter tasks by Country, City, and Specific Area.
+- **Project Deadlines:** Specify "Need by" dates for tasks.
 - **Reputation System:** Professionals earn points and level up (Beginner to Expert).
 - **Donation Ready:** Integrated Crypto (MetaMask) and Bank payment options.
 
@@ -57,12 +64,13 @@ Professionals install this to participate in the mesh and provide a gateway for 
 ---
 
 ### 2. The User Client (Mobile / Standalone)
-Normal users open this to post tasks. It can be hosted on a static server or used as a local HTML app.
+Normal users open this to post tasks. It can be hosted as a **GitHub Static Page** or used as a local HTML app.
 
-1.  Open `client-app/index.html` in any browser.
-2.  Click the ⚙️ (Settings) icon.
-3.  Set the **Mesh Node URL** to the IP/URL of a running Professional Node (default: `http://localhost:3000`).
-4.  Start posting tasks!
+1.  **Host on GitHub:** Upload the `client-app/` folder to a GitHub repository and enable **GitHub Pages** in settings.
+2.  **Open App:** Access the live URL or open `client-app/index.html` locally.
+3.  **Configure Node:** Click the ⚙️ (Settings) icon.
+4.  **Set Node URL:** Enter the IP/URL of a running Professional Node (e.g., `http://your-node-ip:3000`).
+5.  **Post Task:** Fill the form including **Mobile Number** and **Deadline**.
 
 ---
 
@@ -83,6 +91,16 @@ Professionals earn **10 points** per completed task.
 
 ---
 
+## 🤝 Community & Contributing
+
+We welcome contributions! Please see our community documents for more details:
+- **[Contributing Guidelines](CONTRIBUTING.md)** - How to get involved.
+- **[Code of Conduct](CODE_OF_CONDUCT.md)** - Our standards for a healthy community.
+- **[Security Policy](SECURITY.md)** - How to report vulnerabilities.
+- **[License](LICENSE)** - MIT License.
+
+---
+
 ## ⚙️ Configuration
 
 - **Profile:** Edit `professional-node/profile.json` to set your name, profession, and skills.
@@ -90,11 +108,3 @@ Professionals earn **10 points** per completed task.
 - **CORS:** The Pro Node has built-in CORS support to allow any User Client to connect securely.
 
 ---
-
-## 🤝 Contributing
-SkillMesh is decentralized and open-source. Feel free to fork and improve the mesh!
-
----
-
-## 📝 License
-Apache-2.0 OR MIT
