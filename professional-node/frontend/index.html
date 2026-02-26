@@ -226,6 +226,23 @@
         </div>
     </div>
 
+    <!-- Chat Modal -->
+    <div id="chat-modal" class="modal">
+        <div class="modal-content chat-modal-content">
+            <div class="modal-header">
+                <h2 id="chat-title">Chat with Poster</h2>
+                <button class="close-btn" onclick="closeChat()">&times;</button>
+            </div>
+            <div id="chat-messages" class="chat-messages">
+                <!-- Messages -->
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Type a message...">
+                <button onclick="sendChatMessage()" class="btn btn-primary">Send</button>
+            </div>
+        </div>
+    </div>
+
     <div id="notification-toast" class="toast"></div>
 
     <script src="app.js"></script>

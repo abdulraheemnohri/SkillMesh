@@ -1,6 +1,9 @@
 let nodeUrl = localStorage.getItem('skillmesh_node_url') || 'http://localhost:3000';
 let userId = localStorage.getItem('skillmesh_user_id') || 'user-' + Math.floor(Math.random() * 1000);
+localStorage.setItem('skillmesh_user_id', userId);
 let discoveredPros = [];
+let currentChatTaskId = null;
+let chatInterval = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('node-url').value = nodeUrl;
@@ -19,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
             country: document.getElementById('country').value,
             city: document.getElementById('city').value,
             location: document.getElementById('location').value,
+            mobileNumber: document.getElementById('mobile').value,
             deadline: document.getElementById('deadline').value,
             timestamp: new Date().toISOString(),
             id: 'task-' + Date.now(),
@@ -143,8 +147,14 @@ async function loadMyTasks() {
                     <span>🕒 ${new Date(task.timestamp).toLocaleDateString()}</span>
                     ${task.deadline ? `<span style="color:${isExpired ? 'var(--danger)' : 'var(--secondary)'}">📅 ${escapeHTML(task.deadline)}</span>` : ''}
                 </div>
+                <div id="contact-${task.id}" class="task-contact" style="margin-top:0.5rem; font-weight:600; font-size:0.875rem;">
+                    📱 Mobile: ${task.mobileNumber || 'Hidden until claimed'}
+                </div>
                 ${assignedText}
                 ${expiredNotice}
+                <div class="task-actions" style="margin-top:1rem; display:flex; gap:0.5rem;">
+                    ${task.status !== 'open' ? `<button class="btn btn-primary btn-sm" onclick="openChat('${task.id}', '${escapeHTML(task.title)}')">Open Chat</button>` : ''}
+                </div>
             `;
             taskList.appendChild(card);
         });
@@ -211,6 +221,62 @@ window.viewProProfile = (proId) => {
 
 window.closeProModal = () => {
     document.getElementById('pro-modal').style.display = 'none';
+};
+
+window.openChat = (taskId, taskTitle) => {
+    currentChatTaskId = taskId;
+    document.getElementById('chat-title').textContent = `Chat: ${taskTitle}`;
+    document.getElementById('chat-modal').style.display = 'block';
+    loadChatMessages();
+    if (chatInterval) clearInterval(chatInterval);
+    chatInterval = setInterval(loadChatMessages, 3000);
+};
+
+window.closeChat = () => {
+    document.getElementById('chat-modal').style.display = 'none';
+    if (chatInterval) clearInterval(chatInterval);
+};
+
+async function loadChatMessages() {
+    if (!currentChatTaskId) return;
+    try {
+        const response = await fetch(`${nodeUrl}/api/chat/${currentChatTaskId}`);
+        const messages = await response.json();
+        const chatBox = document.getElementById('chat-messages');
+        chatBox.innerHTML = messages.map(m => `
+            <div class="chat-msg ${m.senderId === userId ? 'mine' : 'theirs'}">
+                <span class="chat-sender">${escapeHTML(m.senderName)}</span>
+                ${escapeHTML(m.text)}
+                <span class="chat-time">${new Date(m.timestamp).toLocaleTimeString()}</span>
+            </div>
+        `).join('');
+        chatBox.scrollTop = chatBox.scrollHeight;
+    } catch (err) {}
+}
+
+window.sendChatMessage = async () => {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text || !currentChatTaskId) return;
+
+    try {
+        const response = await fetch(`${nodeUrl}/api/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                taskId: currentChatTaskId,
+                text,
+                senderId: userId,
+                senderName: 'User Poster'
+            })
+        });
+        if (response.ok) {
+            input.value = '';
+            loadChatMessages();
+        }
+    } catch (err) {
+        showToast('Failed to send message.', 'danger');
+    }
 };
 
 function showToast(message, type = 'success') {

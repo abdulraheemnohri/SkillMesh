@@ -1,4 +1,6 @@
 let currentProfile = null;
+let currentChatTaskId = null;
+let chatInterval = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     loadProfile();
@@ -169,6 +171,7 @@ async function loadTasks() {
             const taskCard = document.createElement('div');
             taskCard.className = 'task-card';
 
+            const isAssignedToMe = currentProfile && task.assignedTo === currentProfile.id;
             const safeTitle = escapeHTML(task.title);
             const safeDesc = escapeHTML(task.description);
             const safeType = escapeHTML(task.type);
@@ -193,7 +196,14 @@ async function loadTasks() {
                 </div>
                 <div class="task-actions">
                     ${task.status === 'open' ? `<button class="btn btn-primary btn-sm" onclick="claimTask('${task.id}')">Claim Task</button>` : ''}
-                    ${task.status === 'assigned' ? `<button class="btn btn-secondary btn-sm" onclick="completeTask('${task.id}')">Mark Completed</button>` : ''}
+                    ${isAssignedToMe ? `
+                        <button class="btn btn-secondary btn-sm" onclick="completeTask('${task.id}')">Mark Completed</button>
+                        <button class="btn btn-primary btn-sm" onclick="getContact('${task.id}')">Show Contact</button>
+                        <button class="btn btn-primary btn-sm" onclick="openChat('${task.id}', '${safeTitle}')">Chat</button>
+                    ` : ''}
+                </div>
+                <div id="contact-${task.id}" style="margin-top:0.5rem; font-weight:600; display:${task.mobileNumber ? 'block' : 'none'}">
+                    📱 Contact: ${task.mobileNumber || ''}
                 </div>
             `;
             taskList.appendChild(taskCard);
@@ -404,6 +414,81 @@ async function loadHistory() {
         console.error('Error loading history:', e);
     }
 }
+
+window.getContact = async function(taskId) {
+    try {
+        const response = await fetch(`/api/tasks/${taskId}/contact`);
+        const data = await response.json();
+        if (data.mobileNumber) {
+            const div = document.getElementById(`contact-${taskId}`);
+            div.textContent = `📱 Contact: ${data.mobileNumber}`;
+            div.style.display = 'block';
+            showToast('Contact information retrieved!');
+        } else if (data.status === 'requested') {
+            showToast('Contact requested from poster. Wait a moment...');
+            // Poll for update
+            setTimeout(() => getContact(taskId), 5000);
+        }
+    } catch (e) {
+        showToast('Failed to retrieve contact.', 'danger');
+    }
+}
+
+window.openChat = (taskId, taskTitle) => {
+    currentChatTaskId = taskId;
+    document.getElementById('chat-title').textContent = `Chat: ${taskTitle}`;
+    document.getElementById('chat-modal').style.display = 'block';
+    loadChatMessages();
+    if (chatInterval) clearInterval(chatInterval);
+    chatInterval = setInterval(loadChatMessages, 3000);
+};
+
+window.closeChat = () => {
+    document.getElementById('chat-modal').style.display = 'none';
+    if (chatInterval) clearInterval(chatInterval);
+};
+
+async function loadChatMessages() {
+    if (!currentChatTaskId) return;
+    try {
+        const response = await fetch(`/api/chat/${currentChatTaskId}`);
+        const messages = await response.json();
+        const chatBox = document.getElementById('chat-messages');
+        chatBox.innerHTML = messages.map(m => `
+            <div class="chat-msg ${m.senderId === currentProfile.id ? 'mine' : 'theirs'}">
+                <span class="chat-sender">${escapeHTML(m.senderName)}</span>
+                ${escapeHTML(m.text)}
+                <span class="chat-time">${new Date(m.timestamp).toLocaleTimeString()}</span>
+            </div>
+        `).join('');
+        chatBox.scrollTop = chatBox.scrollHeight;
+    } catch (err) {}
+}
+
+window.sendChatMessage = async () => {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text || !currentChatTaskId) return;
+
+    try {
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                taskId: currentChatTaskId,
+                text,
+                senderId: currentProfile.id,
+                senderName: currentProfile.name
+            })
+        });
+        if (response.ok) {
+            input.value = '';
+            loadChatMessages();
+        }
+    } catch (err) {
+        showToast('Failed to send message.', 'danger');
+    }
+};
 
 function showToast(message, type = 'success') {
     const toast = document.getElementById('notification-toast');
