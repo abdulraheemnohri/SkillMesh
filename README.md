@@ -1,5 +1,9 @@
 # SkillMesh – Professional P2P Task Network
 
+[![SkillMesh CI](https://github.com/USER_NAME/REPO_NAME/actions/workflows/ci.yml/badge.svg)](https://github.com/USER_NAME/REPO_NAME/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub Pages](https://img.shields.io/badge/Deployed%20to-GitHub%20Pages-blue?logo=github)](https://USER_NAME.github.io/REPO_NAME/)
+
 SkillMesh is a fully decentralized professional task network that connects users posting tasks with local professionals (Electricians, Plumbers, Tutors, etc.) using a P2P mesh network.
 
 The ecosystem consists of two variants:
@@ -87,6 +91,16 @@ Professionals earn **10 points** per completed task.
 
 ---
 
+## 🤝 Community & Contributing
+
+We welcome contributions! Please see our community documents for more details:
+- **[Contributing Guidelines](CONTRIBUTING.md)** - How to get involved.
+- **[Code of Conduct](CODE_OF_CONDUCT.md)** - Our standards for a healthy community.
+- **[Security Policy](SECURITY.md)** - How to report vulnerabilities.
+- **[License](LICENSE)** - MIT License.
+
+---
+
 ## ⚙️ Configuration
 
 - **Profile:** Edit `professional-node/profile.json` to set your name, profession, and skills.
@@ -94,11 +108,3 @@ Professionals earn **10 points** per completed task.
 - **CORS:** The Pro Node has built-in CORS support to allow any User Client to connect securely.
 
 ---
-
-## 🤝 Contributing
-SkillMesh is decentralized and open-source. Feel free to fork and improve the mesh!
-
----
-
-## 📝 License
-Apache-2.0 OR MIT
