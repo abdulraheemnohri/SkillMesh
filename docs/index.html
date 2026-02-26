@@ -3,10 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Index Page</title>
+    <title>SkillMesh – User App</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <h1>Welcome to SkillMesh</h1>
-    <p>This is the index page for the SkillMesh documentation.</p>
+    <header class="navbar">
+        <div class="container">
+            <h1 class="logo">SkillMesh <span class="badge-user">User</span></h1>
+            <div class="nav-right">
+                <button onclick="openSettings()" class="btn-icon" title="Connection Settings">⚙️</button>
+                <div id="node-status" class="sync-indicator">
+                    <span class="dot" style="background-color: var(--danger);"></span> Offline
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="grid">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <section class="card section-spacing">
+                    <h2>Available Professionals</h2>
+                    <p class="section-desc">Active professionals currently on the mesh.</p>
+                    <div id="online-peers" class="peer-list">
+                        <p class="text-xs text-muted">Searching the mesh...</p>
+                    </div>
+                </section>
+
+                <section class="card section-spacing">
+                    <h2>Post a New Task</h2>
+                    <p class="section-desc">Broadcast your need to the professional mesh network.</p>
+                    <form id="task-form" class="form-stack">
+                        <div class="field">
+                            <label for="title">What do you need?</label>
+                            <input type="text" id="title" placeholder="e.g. Fix Kitchen Sink" required>
+                        </div>
+                        <div class="field">
+                            <label for="description">Details</label>
+                            <textarea id="description" placeholder="Provide details for the professional..." required></textarea>
+                        </div>
+                        <div class="field">
+                            <label for="type">Category</label>
+                            <select id="type" required>
+                                <option value="">Select Category</option>
+                                <option value="Electrician">Electrician</option>
+                                <option value="Plumber">Plumber</option>
+                                <option value="Tutor">Tutor</option>
+                                <option value="Cleaner">Cleaner</option>
+                            </select>
+                        </div>
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="country">Country</label>
+                                <input type="text" id="country" placeholder="Pakistan" required>
+                            </div>
+                            <div class="field">
+                                <label for="city">City</label>
+                                <input type="text" id="city" placeholder="Karachi" required>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label for="location">Area / Street</label>
+                            <input type="text" id="location" placeholder="Clifton Block 5" required>
+                        </div>
+                        <div class="field">
+                            <label for="deadline">Need by (Optional)</label>
+                            <input type="date" id="deadline">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Post to Mesh</button>
+                    </form>
+                </section>
+
+                <section class="card">
+                    <h2>Support SkillMesh</h2>
+                    <p class="section-desc">We are decentralized. Your donations keep the network free.</p>
+                    <div class="btn-group">
+                        <button class="btn btn-outline" onclick="donateCrypto(0.01)">Crypto Tip</button>
+                    </div>
+                </section>
+            </aside>
+
+            <!-- Main Content -->
+            <div class="main-content">
+                <section class="card section-spacing">
+                    <div class="board-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                        <h2>My Posted Tasks</h2>
+                        <div class="filter-group">
+                            <select id="filter-status" onchange="loadMyTasks()">
+                                <option value="all">All Status</option>
+                                <option value="open">Open</option>
+                                <option value="assigned">Assigned</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="task-list" class="task-grid">
+                        <p class="text-muted" style="text-align:center; padding: 2rem;">Connecting to mesh...</p>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>App Settings</h2>
+                <button class="close-btn" onclick="closeSettings()">&times;</button>
+            </div>
+            <form id="settings-form" class="form-stack">
+                <div class="field">
+                    <label for="node-url">Mesh Node URL</label>
+                    <input type="url" id="node-url" placeholder="http://localhost:3000" required>
+                    <p class="text-xs text-muted">Point this to any SkillMesh node in your network.</p>
+                </div>
+                <div class="field">
+                    <label for="user-id">Your Display ID (Optional)</label>
+                    <input type="text" id="user-id" placeholder="User-123">
+                </div>
+                <button type="submit" class="btn btn-primary">Save & Reconnect</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="notification-toast" class="toast"></div>
+
+    <script src="app.js"></script>
 </body>
 </html>
