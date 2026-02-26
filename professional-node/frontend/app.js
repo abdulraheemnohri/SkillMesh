@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
             country: document.getElementById('country').value,
             city: document.getElementById('city').value,
             location: document.getElementById('location').value,
+            mobileNumber: document.getElementById('mobile').value,
             deadline: document.getElementById('deadline').value,
             timestamp: new Date().toISOString(),
             id: 'task-' + Date.now(),

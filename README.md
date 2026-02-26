@@ -14,7 +14,10 @@ The ecosystem consists of two variants:
 - **Dual-App Ecosystem:** Optimized UI for both professionals (full dashboard) and users (simplified posting).
 - **Mesh Heartbeat & Discovery:** See online professionals and network status in real-time.
 - **P2P Sync & Conflict Resolution:** Built on `libp2p` with "First-Claim-Wins" logic.
+- **P2P Chat System:** Real-time mesh-synced chat for task coordination.
+- **Private Contact Reveal:** Mobile numbers are hidden during broadcast and only revealed to the claimer.
 - **Multi-Location Filtering:** Filter tasks by Country, City, and Specific Area.
+- **Project Deadlines:** Specify "Need by" dates for tasks.
 - **Reputation System:** Professionals earn points and level up (Beginner to Expert).
 - **Donation Ready:** Integrated Crypto (MetaMask) and Bank payment options.
 
@@ -57,12 +60,13 @@ Professionals install this to participate in the mesh and provide a gateway for 
 ---
 
 ### 2. The User Client (Mobile / Standalone)
-Normal users open this to post tasks. It can be hosted on a static server or used as a local HTML app.
+Normal users open this to post tasks. It can be hosted as a **GitHub Static Page** or used as a local HTML app.
 
-1.  Open `client-app/index.html` in any browser.
-2.  Click the ⚙️ (Settings) icon.
-3.  Set the **Mesh Node URL** to the IP/URL of a running Professional Node (default: `http://localhost:3000`).
-4.  Start posting tasks!
+1.  **Host on GitHub:** Upload the `client-app/` folder to a GitHub repository and enable **GitHub Pages** in settings.
+2.  **Open App:** Access the live URL or open `client-app/index.html` locally.
+3.  **Configure Node:** Click the ⚙️ (Settings) icon.
+4.  **Set Node URL:** Enter the IP/URL of a running Professional Node (e.g., `http://your-node-ip:3000`).
+5.  **Post Task:** Fill the form including **Mobile Number** and **Deadline**.
 
 ---
 

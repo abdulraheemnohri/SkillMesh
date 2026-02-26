@@ -67,7 +67,8 @@ function handleP2PMessage(message) {
     if (!tasks.find(t => t.id === message.task.id)) { tasks.push(message.task); changed = true; }
   } else if (message.type === 'contact-request') {
     const task = tasks.find(t => t.id === message.taskId)
-    if (task && task.ownerId === profile.id && task.assignedTo === message.requesterId) {
+    // Only reveal if we have the number (original gateway) and it is assigned to requester
+    if (task && task.mobileNumber && task.assignedTo === message.requesterId) {
       broadcast({
         type: 'contact-response',
         taskId: task.id,
